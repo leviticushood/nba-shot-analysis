@@ -9,6 +9,7 @@ library(tidyverse)
 library(sportyR)
 library(ggridges)
 library(lubridate)
+library(dplyr)
 ```
 
 ```{r}
@@ -65,6 +66,9 @@ game_stats <- shot_data %>%
   group_by(player) %>%
   summarize(total_makes = sum(result))
 
+game_periods <- ms(shot_data$time_remaining)
+
+minutes_numeric <- as.numeric(game_periods, "minutes")
 
 ggplot(shot_data, aes(x = time_remaining, y = player,
                       height = 0)) +
