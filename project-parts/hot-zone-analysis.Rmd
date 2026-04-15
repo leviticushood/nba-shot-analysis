@@ -8,18 +8,41 @@ library(ggplot2)
 library(tidyverse)
 library(sportyR)
 library(ggridges)
+library(lubridate)
 ```
 
 ```{r}
 shot_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv')
 ```
 
-```{r}
-ggplot(shot_data, aes(x = distance_ft, fill = player)) +
-  geom_boxplot()
+```{r, fig.height = 6, fig.width = 10}
+ggplot(shot_data, aes(x = distance_ft, y = player,
+                      fill = player)) +
+  annotate('rect',
+           xmin = 22, xmax = Inf,
+           ymin = -Inf, ymax = Inf,
+           fill = '#AD9168',
+           color = 'black') +
+  geom_boxplot() +
+  scale_fill_manual(values = c('Lebron' = '#552583',
+                               'Curry' = '#1D428A',
+                               'Harden' = '#C8102E')) +
+  stat_summary(geom = "text", 
+               fun = mean, 
+               aes(label = sprintf("Avg: %.1f ft", ..x..)),
+               vjust = -2, 
+               color = "black",
+               fontface = "bold") +
+  theme_minimal()
 ```
 
 ```{r}
+
+game_stats <- shot_data %>% 
+  group_by(player) %>%
+  summarize(total_makes = sum(result))
+
+
 ggplot(shot_data, aes(x = time_remaining, y = player,
                       height = 0)) +
   geom_ridgeline()
