@@ -7,14 +7,30 @@ output: html_document
 library(ggplot2)
 library(tidyverse)
 library(sportyR)
+library(ggridges)
 ```
 
 ```{r}
-hotzone_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') %>% 
+shot_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv')
+```
+
+```{r}
+ggplot(shot_data, aes(x = distance_ft, fill = player)) +
+  geom_boxplot()
+```
+
+```{r}
+ggplot(shot_data, aes(x = time_remaining, y = player,
+                      height = 0)) +
+  geom_ridgeline()
+```
+
+
+
+```{r}
+hotzone_data <- shot_data %>% 
   select('player','top','left')
-```
 
-```{r}
 court <- geom_basketball(league = 'NBA',
                          court_units = 'feet'
                          #display_range = 'offense'
