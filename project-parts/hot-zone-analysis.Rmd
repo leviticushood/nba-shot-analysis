@@ -27,7 +27,7 @@ ggplot(shot_data %>%
            color = 'black',
            alpha = .5) +
   geom_boxplot() +
-  scale_fill_manual(values = c('Lebron' = '#552583',
+  scale_fill_manual(values = c('LeBron' = '#552583',
                                'Curry' = '#1D428A',
                                'Harden' = '#C8102E')) +
   geom_text(aes(label = player), 
