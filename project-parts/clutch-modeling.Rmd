@@ -2,4 +2,11 @@
 title: "clutch-modeling"
 output: html_document
 ---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+model_data <- read_csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv')
+```
 
