@@ -3,3 +3,61 @@ title: "shooting-consistency"
 output: html_document
 ---
 
+```{r}
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(ggtext)
+library(patchwork)
+library(ggrepel)
+library(zoo)
+
+# Load and Standardize Data
+file_paths <- c("2_james_harden_shot_chart_2023.csv", "1_lebron_james_shot_chart_2023.csv", "3_steph_curry_shot_chart_2023.csv")
+
+read_shot_file <- function(path) {
+  player_name <- path |>
+    basename() |>
+    tools::file_path_sans_ext() |>
+    str_remove("^\\d+_") |>        
+    str_replace_all("_", " ") |>
+    str_to_title()
+  
+  player_name <- str_remove(player_name, "\\s*Shot Chart.*")
+  
+  read_csv(path, show_col_types = FALSE) |>
+    mutate(player = player_name)
+}
+
+shots_raw <- map_dfr(file_paths, read_shot_file)
+
+# Normalize key columns
+shots <- shots_raw |>
+  rename(
+    game_date  = any_of(c("GAME_DATE", "game_date", "date", "Date")),
+    shot_made  = any_of(c("SHOT_MADE_FLAG", "shot_made_flag", "made", "MADE"))
+  ) |>
+  mutate(
+    # parse "2022-10-18" or "20221018"
+    game_date = ymd(game_date),   
+    shot_made = as.integer(shot_made)
+  ) |>
+  filter(!is.na(game_date), !is.na(shot_made))
+
+game_fg <- shots |>
+  group_by(player, game_date) |>
+  summarise(
+    # Calculate the fg%
+    fga      = n(),                        
+    fgm      = sum(shot_made),              
+    fg_pct   = fgm / fga,                   
+    .groups  = "drop"
+  ) |>
+  arrange(player, game_date) |>
+  group_by(player) |>
+  mutate(game_num = row_number()) |>       
+  ungroup()
+ 
+cat(" Per-game FG% sample \n")
+print(head(game_fg, 10))
+```
