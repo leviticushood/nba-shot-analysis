@@ -37,7 +37,7 @@ ggplot(shot_data %>%
           size = 5,
           check_overlap = TRUE) +
   annotate('text',
-           x = 29.6,y = 3,
+           x = 29.5,y = 3,
            color = '#6A5639',
            vjust = -3,
            label = '(3pt Range)',
