@@ -3,3 +3,25 @@ title: "hot-zone-analysis"
 output: html_document
 ---
 
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(sportyR)
+```
+
+```{r}
+hotzone_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') %>% 
+  select('player','top','left')
+```
+
+```{r}
+court <- geom_basketball(league = 'NBA',
+                         court_units = 'feet'
+                         #display_range = 'offense'
+                         )
+
+court + geom_point(data = hotzone_data,
+               aes(x = left, y = top, color = player), 
+               alpha = 0.5)
+```
+
