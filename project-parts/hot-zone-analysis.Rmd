@@ -19,9 +19,11 @@ court <- geom_basketball(league = 'NBA',
                          court_units = 'feet'
                          #display_range = 'offense'
                          )
+hotzone_data$left_scaled <- (hotzone_data$left - 250) / 10
+hotzone_data$top_scaled <- 41.75 - hotzone_data$top / 10
 
 court + geom_point(data = hotzone_data,
-               aes(x = left, y = top, color = player), 
+               aes(x = top_scaled, y = left_scaled, color = player), 
                alpha = 0.5)
 ```
 
