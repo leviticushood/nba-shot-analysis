@@ -73,19 +73,35 @@ ggplot(shot_data, aes(x = time_remaining, y = player,
 
 
 
-```{r}
+```{r fig.width = 9, fig.height = 4}
 hotzone_data <- shot_data %>% 
-  select('player','top','left')
+  select('player','top','left', 'result') %>% 
+  filter(result == 'TRUE')
 
 court <- geom_basketball(league = 'NBA',
-                         court_units = 'feet'
-                         #display_range = 'offense'
+                         court_units = 'feet',
+                         display_range = 'offense'
                          )
-hotzone_data$left_scaled <- (hotzone_data$left - 250) / 10
-hotzone_data$top_scaled <- 41.75 - hotzone_data$top / 10
 
-court + geom_point(data = hotzone_data,
-               aes(x = top_scaled, y = left_scaled, color = player), 
-               alpha = 0.5)
+hotzone_data$left_scaled <- (hotzone_data$left - 240) / 10
+hotzone_data$top_scaled <- 47 - (hotzone_data$top / 10)
+
+court + 
+  geom_point(data = hotzone_data,
+                   aes(x = top_scaled, y = left_scaled, 
+                       color = player,
+                       alpha = 0.2)) +
+  scale_color_manual(values = c('LeBron' = '#552583',
+                                'Curry'  = '#1D428A',
+                                'Harden' = '#C8102E')) +
+  facet_wrap(~player) +
+  labs(title = 'Geospatial Distribution of Successful Field Goals',
+       subtitle = '2023 NBA Season',
+       caption = 'Data Source: Kaggle (2024)') +
+  theme(legend.position = 'none',
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold",
+                                  size = 10,
+                                  color = "black"))
 ```
 
