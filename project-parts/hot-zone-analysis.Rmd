@@ -16,8 +16,10 @@ shot_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_c
 ```
 
 ```{r, fig.height = 6, fig.width = 9}
-ggplot(shot_data, aes(x = distance_ft, y = player,
-                      fill = player)) +
+ggplot(shot_data %>% 
+         filter(result == 'TRUE'),
+       aes(x = distance_ft, y = player,
+           fill = player)) +
   annotate('rect',
            xmin = 22, xmax = Inf,
            ymin = -Inf, ymax = Inf,
@@ -30,24 +32,28 @@ ggplot(shot_data, aes(x = distance_ft, y = player,
                                'Harden' = '#C8102E')) +
   geom_text(aes(label = player), 
           color = 'white',
-          x = 15,
+          x = 12,
           fontface = 'bold',
           size = 5,
           check_overlap = TRUE) +
   annotate('text',
-           x = 30,y = 3,
+           x = 29.6,y = 3,
            color = '#6A5639',
            vjust = -3,
            label = '(3pt Range)',
            fontface = 'bold',
            size = 5) +
-  labs(x = 'Distance (ft)', y = NULL,
-       title = 'Field Goal Distance by Player',
+  labs(x = 'Distance from Hoop (ft)', y = NULL,
+       title = 'Successful Field Goal Distance by Player',
        subtitle = '2023 NBA Season',
        caption = 'Data Source: Kaggle (2024)') +
+#annotate("segment", x = 0, xend = 0, y = 1.8, yend = 2.2, 
+#         color = "black", size = 2) +
+#annotate("point", x = 0.7, y = 2, shape = 21, size = 8, 
+#         fill = "white", color = "black") +
   theme_bw() +
   theme(axis.text.y = element_blank(),
-        legend.position = 'none',) +
+        legend.position = 'none') +
   scale_x_continuous(breaks = seq(0, 40, by = 5))
 
 ```
