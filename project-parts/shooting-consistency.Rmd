@@ -60,4 +60,64 @@ game_fg <- shots |>
  
 cat(" Per-game FG% sample \n")
 print(head(game_fg, 10))
+
+# Stability metrics
+
+stability <- game_fg |>
+  group_by(player) |>
+  summarise(
+        games        = n(),
+    season_fg    = mean(fg_pct),           
+    sd_fg        = sd(fg_pct),              
+    cv_fg        = sd_fg / season_fg,       
+    median_fg    = median(fg_pct),
+    iqr_fg       = IQR(fg_pct),
+    .groups      = "drop"
+  ) |>
+  arrange(desc(cv_fg))
+cat("\n Stability Metrics \n")
+print(stability)
+
+
+# Rolling Average (5-game window) for trend
+
+game_fg <- game_fg |>
+  group_by(player) |>
+  mutate(
+    roll5_fg = zoo::rollmeanr(fg_pct, k = 5, fill = NA)
+  ) |>
+  ungroup()
+ 
+# Plot: Rolling FG% trend
+plot_rolling <- game_fg |>
+  ggplot(aes(x = game_num)) +
+  # Raw per-game bars (muted, background context)
+  geom_col(aes(y = fg_pct), fill = "#a8c8e8", alpha = 0.55, width = 0.7) +
+  # 5-game rolling average line
+  geom_line(aes(y = roll5_fg, colour = player), linewidth = 1.2, na.rm = TRUE) +
+  geom_point(aes(y = roll5_fg, colour = player), size = 1.8, na.rm = TRUE) +
+  # Season average reference
+  geom_hline(
+    data = stability,
+    aes(yintercept = season_fg, colour = player),
+    linetype = "dashed", linewidth = 0.7, alpha = 0.7
+  ) +
+  facet_wrap(~player, ncol = 1, scales = "free_x") +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  scale_colour_brewer(palette = "Set1", guide = "none") +
+  labs(
+    title    = "**FG% Trend** — 5-Game Rolling Average",
+    subtitle = "Bars = per-game FG% | Line = 5-game rolling avg | Dashed = season avg",
+    x        = "Game Number (chronological)",
+    y        = "Field Goal %",
+    caption  = "Source: NBA 2023 Player Shot Chart Dataset (Kaggle)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_markdown(face = "bold"),
+    strip.text    = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+ 
+print(plot_rolling)
 ```
