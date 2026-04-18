@@ -366,7 +366,8 @@ library(tidyverse)</code></pre>
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 <pre class="r"><code>library(sportyR)
 library(ggridges)
-library(lubridate)</code></pre>
+library(lubridate)
+library(dplyr)</code></pre>
 <pre class="r"><code>shot_data &lt;- read.csv(&#39;/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv&#39;)</code></pre>
 <pre class="r"><code>ggplot(shot_data %&gt;% 
          filter(result == &#39;TRUE&#39;),
@@ -413,6 +414,9 @@ library(lubridate)</code></pre>
   group_by(player) %&gt;%
   summarize(total_makes = sum(result))
 
+game_periods &lt;- ms(shot_data$time_remaining)
+
+minutes_numeric &lt;- as.numeric(game_periods, &quot;minutes&quot;)
 
 ggplot(shot_data, aes(x = time_remaining, y = player,
                       height = 0)) +

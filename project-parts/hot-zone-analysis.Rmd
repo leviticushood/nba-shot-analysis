@@ -60,24 +60,34 @@ ggplot(shot_data %>%
 
 ```
 
-```{r}
+```{r fig.height = 7, fig.width = 10}
 
-game_stats <- shot_data %>% 
-  group_by(player) %>%
-  summarize(total_makes = sum(result))
+ridgeline_data <- shot_data %>% 
+  select('player', 'qtr', 'time_remaining', 'result') %>% 
+  filter(qtr %in% c('1st Qtr', '2nd Qtr', '3rd Qtr', '4th Qtr')) %>% 
+  filter(result == 'TRUE') %>% 
+  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds'))
 
-game_periods <- ms(shot_data$time_remaining)
+ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
+                           fill = player,
+                           alpha = 0.6)) +
+  geom_density_ridges(rel_min_height = 0.01,
+                      position = 'identity') +
+  scale_x_reverse(limits = c(720, 0)) +
+  labs(x = 'Seconds Remaining in Quarter') +
+    scale_fill_manual(values = c('LeBron' = '#552583',
+                               'Curry' = '#1D428A',
+                               'Harden' = '#C8102E')) +
+  facet_wrap(~qtr) +
+  theme_ridges() +
+  theme(axis.title.y = element_blank(),
+        legend.position = 'none')
 
-minutes_numeric <- as.numeric(game_periods, "minutes")
-
-ggplot(shot_data, aes(x = time_remaining, y = player,
-                      height = 0)) +
-  geom_ridgeline()
 ```
 
 
 
-```{r fig.width = 9, fig.height = 4}
+```{r fig.width = 10, fig.height = 5}
 hotzone_data <- shot_data %>% 
   select('player','top','left', 'result') %>% 
   filter(result == 'TRUE')
