@@ -24,5 +24,6 @@ model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_
            1, 0)
          )
 
+model_data %>% group_by(player, is_clutch) %>% count()
 ```
 
