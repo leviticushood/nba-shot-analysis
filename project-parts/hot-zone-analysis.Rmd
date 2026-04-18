@@ -75,7 +75,9 @@ ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
                       position = 'identity') +
   scale_x_reverse(limits = c(720, 0)) +
   labs(title = 'Made Shots by Quarter',
-  x = 'Seconds Remaining in Quarter') +
+       subtitle = 'When Each Player Scores as the Clock Winds Down',
+       x = 'Seconds Remaining in Quarter',
+       caption = 'Data Source: Kaggle (2024)') +
     scale_fill_manual(values = c('LeBron' = '#552583',
                                'Curry' = '#1D428A',
                                'Harden' = '#C8102E')) +
