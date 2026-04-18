@@ -74,7 +74,8 @@ ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
   geom_density_ridges(rel_min_height = 0.01,
                       position = 'identity') +
   scale_x_reverse(limits = c(720, 0)) +
-  labs(x = 'Seconds Remaining in Quarter') +
+  labs(title = 'Made Shots by Quarter',
+  x = 'Seconds Remaining in Quarter') +
     scale_fill_manual(values = c('LeBron' = '#552583',
                                'Curry' = '#1D428A',
                                'Harden' = '#C8102E')) +
