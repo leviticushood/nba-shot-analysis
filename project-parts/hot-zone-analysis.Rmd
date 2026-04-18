@@ -9,6 +9,7 @@ library(tidyverse)
 library(sportyR)
 library(ggridges)
 library(lubridate)
+library(dplyr)
 ```
 
 ```{r}
@@ -16,8 +17,10 @@ shot_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_c
 ```
 
 ```{r, fig.height = 6, fig.width = 9}
-ggplot(shot_data, aes(x = distance_ft, y = player,
-                      fill = player)) +
+ggplot(shot_data %>% 
+         filter(result == 'TRUE'),
+       aes(x = distance_ft, y = player,
+           fill = player)) +
   annotate('rect',
            xmin = 22, xmax = Inf,
            ymin = -Inf, ymax = Inf,
@@ -25,60 +28,94 @@ ggplot(shot_data, aes(x = distance_ft, y = player,
            color = 'black',
            alpha = .5) +
   geom_boxplot() +
-  scale_fill_manual(values = c('Lebron' = '#552583',
+  scale_fill_manual(values = c('LeBron' = '#552583',
                                'Curry' = '#1D428A',
                                'Harden' = '#C8102E')) +
   geom_text(aes(label = player), 
           color = 'white',
-          x = 15,
+          x = 12,
           fontface = 'bold',
           size = 5,
           check_overlap = TRUE) +
   annotate('text',
-           x = 30,y = 3,
+           x = 29.5,y = 3,
            color = '#6A5639',
            vjust = -3,
            label = '(3pt Range)',
            fontface = 'bold',
            size = 5) +
-  labs(x = 'Distance (ft)', y = NULL,
-       title = 'Field Goal Distance by Player',
+  labs(x = 'Distance from Hoop (ft)', y = NULL,
+       title = 'Successful Field Goal Distance by Player',
        subtitle = '2023 NBA Season',
        caption = 'Data Source: Kaggle (2024)') +
+#annotate("segment", x = 0, xend = 0, y = 1.8, yend = 2.2, 
+#         color = "black", size = 2) +
+#annotate("point", x = 0.7, y = 2, shape = 21, size = 8, 
+#         fill = "white", color = "black") +
   theme_bw() +
   theme(axis.text.y = element_blank(),
-        legend.position = 'none',) +
+        legend.position = 'none',
+        axis.ticks.y = element_blank()) +
   scale_x_continuous(breaks = seq(0, 40, by = 5))
 
 ```
 
-```{r}
+```{r fig.height = 7, fig.width = 10}
 
-game_stats <- shot_data %>% 
-  group_by(player) %>%
-  summarize(total_makes = sum(result))
+ridgeline_data <- shot_data %>% 
+  select('player', 'qtr', 'time_remaining', 'result') %>% 
+  filter(qtr %in% c('1st Qtr', '2nd Qtr', '3rd Qtr', '4th Qtr')) %>% 
+  filter(result == 'TRUE') %>% 
+  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds'))
 
+ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
+                           fill = player,
+                           alpha = 0.6)) +
+  geom_density_ridges(rel_min_height = 0.01,
+                      position = 'identity') +
+  scale_x_reverse(limits = c(720, 0)) +
+  labs(x = 'Seconds Remaining in Quarter') +
+    scale_fill_manual(values = c('LeBron' = '#552583',
+                               'Curry' = '#1D428A',
+                               'Harden' = '#C8102E')) +
+  facet_wrap(~qtr) +
+  theme_ridges() +
+  theme(axis.title.y = element_blank(),
+        legend.position = 'none')
 
-ggplot(shot_data, aes(x = time_remaining, y = player,
-                      height = 0)) +
-  geom_ridgeline()
 ```
 
 
 
-```{r}
+```{r fig.width = 10, fig.height = 5}
 hotzone_data <- shot_data %>% 
-  select('player','top','left')
+  select('player','top','left', 'result') %>% 
+  filter(result == 'TRUE')
 
 court <- geom_basketball(league = 'NBA',
-                         court_units = 'feet'
-                         #display_range = 'offense'
+                         court_units = 'feet',
+                         display_range = 'offense'
                          )
-hotzone_data$left_scaled <- (hotzone_data$left - 250) / 10
-hotzone_data$top_scaled <- 41.75 - hotzone_data$top / 10
 
-court + geom_point(data = hotzone_data,
-               aes(x = top_scaled, y = left_scaled, color = player), 
-               alpha = 0.5)
+hotzone_data$left_scaled <- (hotzone_data$left - 240) / 10
+hotzone_data$top_scaled <- 47 - (hotzone_data$top / 10)
+
+court + 
+  geom_point(data = hotzone_data,
+                   aes(x = top_scaled, y = left_scaled, 
+                       color = player,
+                       alpha = 0.2)) +
+  scale_color_manual(values = c('LeBron' = '#552583',
+                                'Curry'  = '#1D428A',
+                                'Harden' = '#C8102E')) +
+  facet_wrap(~player) +
+  labs(title = 'Geospatial Distribution of Successful Field Goals',
+       subtitle = '2023 NBA Season',
+       caption = 'Data Source: Kaggle (2024)') +
+  theme(legend.position = 'none',
+        strip.background = element_blank(),
+        strip.text = element_text(face = "bold",
+                                  size = 10,
+                                  color = "black"))
 ```
 
