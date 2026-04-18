@@ -4,9 +4,25 @@ output: html_document
 ---
 ```{r}
 library(tidyverse)
+library(lubridate)
+
 ```
 
 ```{r}
-model_data <- read_csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv')
+model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') %>% 
+  select('player', 'qtr', 'time_remaining',
+         'result', 'distance_ft', 'lead',
+         'player_team_score', 'opponent_team_score') %>% 
+  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) %>%
+  mutate('margin' = abs(player_team_score - opponent_team_score),
+         result_binary = ifelse(model_data$result == 'TRUE', 1, 0),
+         lead_binary = ifelse(model_data$lead == 'TRUE', 1, 0),
+         is_clutch = ifelse(
+           qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
+             sec_remaining <= 120 &
+             margin <= 5,
+           1, 0)
+         )
+
 ```
 
