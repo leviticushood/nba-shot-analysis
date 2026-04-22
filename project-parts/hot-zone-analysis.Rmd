@@ -73,7 +73,7 @@ ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
                            alpha = 0.6)) +
   geom_density_ridges(rel_min_height = 0.01,
                       position = 'identity') +
-  scale_x_reverse(limits = c(720, 0)) +
+  scale_x_reverse(limits = c(720, 0), breaks = seq(720,0,-60)) +
   labs(title = 'Made Shots by Quarter',
        subtitle = 'When Each Player Scores as the Clock Winds Down',
        x = 'Seconds Remaining in Quarter',
