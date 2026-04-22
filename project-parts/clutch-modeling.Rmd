@@ -2,21 +2,27 @@
 title: "clutch-modeling"
 output: html_document
 ---
-```{r}
+```{r Setup}
 library(tidyverse)
 library(lubridate)
+library(GGally)
 
 ```
 
-```{r}
-model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') |> 
+```{r Data Cleaning}
+
+ # data cleaning and binary conversion
+model_df <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') |> 
   select('player', 'qtr', 'time_remaining',
          'result', 'distance_ft', 'lead',
          'player_team_score', 'opponent_team_score') |> 
   mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) |>
+  select(-'time_remaining') |>
   mutate(margin = abs(player_team_score - opponent_team_score),
-         result_binary = ifelse(model_data$result == 'TRUE', 1, 0),
-         lead_binary = ifelse(model_data$lead == 'TRUE', 1, 0),
+         result = ifelse(model_data$result == 'TRUE', 1, 0),
+         lead = ifelse(model_data$lead == 'TRUE', 1, 0),
+         
+ # define clutch
          is_clutch = ifelse(
            qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
              sec_remaining <= 120 &
@@ -24,6 +30,18 @@ model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_
            1, 0)
          )
 
-model_data |> group_by(player, is_clutch) |> count()
+curry_df<- model_df |> filter(player == 'Curry')
+```
+
+```{r Exploratory Data Analysis, fig.width=14, fig.height=11}
+
+ # convert qtrs to numeric features
+num_curry_df <- curry_df |>
+  select(-'player')
+num_curry_df$qtr <- as.numeric(factor(num_curry_df$qtr,
+         levels = c('1st Qtr', '2nd Qtr', '3rd Qtr',
+                    '4th Qtr', '1st OT', '2nd OT')))
+# correlation matrix
+ggpairs(num_curry_df, progress = FALSE)
 ```
 
