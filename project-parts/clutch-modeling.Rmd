@@ -77,7 +77,7 @@ summary(model_lr)
   
 probs_lr <- predict(model_lr, newdata = test_df, type = "response")
 roc_lr <- roc(test_df$result, probs_lr)
-cat("Logistic Regression AUC:", auc(roc_lr), "\n")
+cat("5 Feature Logistic Regression AUC:", auc(roc_lr), "\n")
 
  # confusion matrix
 preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
@@ -90,7 +90,7 @@ model_lr <- glm(result ~ distance_ft + margin + three_pt,
 
 probs_lr <- predict(model_lr, newdata = test_df, type = "response")
 roc_lr <- roc(test_df$result, probs_lr)
-cat("Logistic Regression AUC:", auc(roc_lr), "\n")
+cat("3 Feature Logistic Regression AUC:", auc(roc_lr), "\n")
 
  # confusion matrix
 preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
@@ -128,7 +128,7 @@ probs_nb = predict(model_nb,
                    type = 'prob')[, 2]
 
 roc_nb <- roc(test_df$result, probs_nb)
-cat("Naive Bayes AUC:", auc(roc_nb), "\n")
+cat("5 Feature Naive Bayes AUC:", auc(roc_nb), "\n")
 
 confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
 
@@ -145,7 +145,7 @@ probs_nb = predict(model_nb,
                    type = 'prob')[, 2]
 
 roc_nb <- roc(test_df$result, probs_nb)
-cat("Naive Bayes AUC:", auc(roc_nb), "\n")
+cat("3 Feature Naive Bayes AUC:", auc(roc_nb), "\n")
 
 confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
 
