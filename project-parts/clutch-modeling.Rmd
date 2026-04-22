@@ -96,7 +96,7 @@ cat("Logistic Regression AUC:", auc(roc_lr), "\n")
 preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
- # feature selection comparison
+ # LR feature selection comparison
 
  # 2 variable (dist, margin)                         Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64, Sensitivity: 0.72, Specificity: 0.47
  # 3 variable (dist, margin, three_pt)               Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64, Sensitivity: 0.76, Specificity: 0.45
@@ -110,10 +110,51 @@ confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
 
 ```{r Naive Bayes}
-# 
-# model_nb <- naive_bayes(as.factor(result) ~ distance_ft + qtr + sec_remaining + margin,
-#                        data = train_df)
+ 
+ # 5 features
+model_nb <- naive_bayes(as.factor(result) ~ distance_ft + qtr + sec_remaining + margin + three_pt,
+                        data = train_df,
+                        laplace = 1)
+ # NB model EDA (top 3 features)
+model_nb$tables$distance_ft
+model_nb$tables$margin
+model_nb$tables$three_pt
 
+preds_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'class')
+probs_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_nb <- roc(test_df$result, probs_nb)
+cat("Naive Bayes AUC:", auc(roc_nb), "\n")
+
+confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
+
+ # 3 features
+model_nb <- naive_bayes(as.factor(result) ~ distance_ft + margin + three_pt,
+                        data = train_df,
+                        laplace = 1)
+
+preds_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'class')
+probs_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_nb <- roc(test_df$result, probs_nb)
+cat("Naive Bayes AUC:", auc(roc_nb), "\n")
+
+confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
+
+ # NB feature comparison
+
+ # 5 variable (dist, qtr, sec, margin, three_pt)    Accuracy: 0.59, Kappa: 0.18, AUC: 0.63, Sensitivity: 0.71, Specificity: 0.47
+ # 3 variable (dist, margin, three_pt)              Accuracy: 0.59, Kappa: 0.19, AUC: 0.64, Sensitivity: 0.71, Specificity: 0.49
+
+ # // 3 variable (dist, margin, three_pt) //
 
 ```
 
