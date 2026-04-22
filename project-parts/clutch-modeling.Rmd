@@ -96,14 +96,14 @@ cat("Logistic Regression AUC:", auc(roc_lr), "\n")
 preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
- # tested: 
+ # feature selection comparison
 
- # 2 variable (dist, margin)                      Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64
- # 3 variable (dist, margin, three_pt)            Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64
- # 4 variable (dist, qtr, sec, margin)            Accuracy: 0.46, Kappa: -0.07, AUC: 0.53
- # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.59, Kappa: 0.20,  AUC: 0.63
+ # 2 variable (dist, margin)                         Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64, Sensitivity: 0.72, Specificity: 0.47
+ # 3 variable (dist, margin, three_pt)               Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64, Sensitivity: 0.76, Specificity: 0.45
+ # 4 variable (dist, qtr, sec, margin)               Accuracy: 0.46, Kappa: -0.07, AUC: 0.53, Sensitivity: 0.55, Specificity: 0.38
+ # 5 variable (dist, qtr, sec, margin, three_pt)     Accuracy: 0.59, Kappa: 0.20,  AUC: 0.63, Sensitivity: 0.73, Specificity: 0.47
 
- # ** 3 features outperforms 2, 4, or 5 features **
+ # // 3 variable (dist, margin, three_pt) as baseline going forward //
 
 ```
 
