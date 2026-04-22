@@ -60,7 +60,7 @@ cat("Test set: ", nrow(test_df),  "rows |",
     round(mean(test_df$result  == 1) * 100, 1), "% Successful Shots\n")
 
 ```
-```{r Logistic Regression (Baseline)}
+```{r Logistic Regression & Feature Selection(Baseline)}
 
  # 5 features
 model_lr <- glm(result ~ distance_ft + qtr + sec_remaining + margin + three_pt,
@@ -83,7 +83,7 @@ cat("Logistic Regression AUC:", auc(roc_lr), "\n")
 preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
- # 2 features
+ # 3 features
 model_lr <- glm(result ~ distance_ft + margin + three_pt,
                 data = train_df,
                 family = binomial)
@@ -97,10 +97,11 @@ preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
  # tested: 
- # distance_ft + qtr + sec_remaining + margin + three_pt
- # distance_ft + qtr + sec_remaining + margin
- # distance_ft + margin + three_pt
- # distance_ft + margin
+
+ # 2 variable (dist, margin)                      Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64
+ # 3 variable (dist, margin, three_pt)            Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64
+ # 4 variable (dist, qtr, sec, margin)            Accuracy: 0.46, Kappa: -0.07, AUC: 0.53
+ # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.59, Kappa: 0.20,  AUC: 0.63
 
  # ** 3 features outperforms 2, 4, or 5 features **
 
