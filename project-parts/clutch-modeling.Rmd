@@ -6,6 +6,9 @@ output: html_document
 library(tidyverse)
 library(lubridate)
 library(GGally)
+library(caret)
+library(naivebayes)
+library(pROC)
 
 ```
 
@@ -15,22 +18,17 @@ library(GGally)
 model_df <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') |> 
   select('player', 'qtr', 'time_remaining',
          'result', 'distance_ft', 'lead',
-         'player_team_score', 'opponent_team_score') |> 
+         'player_team_score', 'opponent_team_score',
+         'shot_type') |> 
   mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) |>
-  select(-'time_remaining') |>
-  mutate(margin = abs(player_team_score - opponent_team_score),
-         result = ifelse(model_data$result == 'TRUE', 1, 0),
-         lead = ifelse(model_data$lead == 'TRUE', 1, 0),
-         
- # define clutch
-         is_clutch = ifelse(
-           qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
-             sec_remaining <= 120 &
-             margin <= 5,
-           1, 0)
-         )
+  mutate(margin = player_team_score - opponent_team_score,
+         result = ifelse(result == 'TRUE', 1, 0),
+         lead = ifelse(lead == 'TRUE', 1, 0),
+         three_pt = ifelse(shot_type == 3, 1, 0)) |>
+  select(-'time_remaining', -'player_team_score',
+         -'opponent_team_score', -'lead', -'shot_type')
 
-curry_df<- model_df |> filter(player == 'Curry')
+curry_df <- model_df |> filter(player == 'Curry')
 ```
 
 ```{r Exploratory Data Analysis, fig.width=14, fig.height=11}
@@ -47,8 +45,92 @@ ggpairs(num_curry_df, progress = FALSE)
 
 ```{r Train/Test Split}
 
+set.seed(123)
+
+ # stratified 80/20 split
+train_idx <- createDataPartition(num_curry_df$result, p = 0.80, list = FALSE)
+
+train_df <- num_curry_df[train_idx, ]
+test_df <- num_curry_df[-train_idx, ]
+
+ # verify stratification
+cat("Train set:", nrow(train_df), "rows |",
+    round(mean(train_df$result == 1) * 100, 1), "% Successful Shots\n")
+cat("Test set: ", nrow(test_df),  "rows |",
+    round(mean(test_df$result  == 1) * 100, 1), "% Successful Shots\n")
+
+```
+```{r Logistic Regression (Baseline)}
+
+ # 5 features
+model_lr <- glm(result ~ distance_ft + qtr + sec_remaining + margin + three_pt,
+                data = train_df,
+                family = binomial)
+ # feature significance
+summary(model_lr)
+ #                 Estimate Std. Error z value Pr(>|z|)   
+ # distance_ft   -0.0674535  0.0135980  -4.961 7.03e-07 ***
+ # qtr           -0.0611919  0.0540645  -1.132 0.257706    
+ # sec_remaining  0.0002799  0.0003116   0.898 0.369065    
+ # margin         0.0273476  0.0065508   4.175 2.98e-05 ***
+ # three_pt       0.6167029  0.2810805   2.194 0.028232 *  
+  
+probs_lr <- predict(model_lr, newdata = test_df, type = "response")
+roc_lr <- roc(test_df$result, probs_lr)
+cat("Logistic Regression AUC:", auc(roc_lr), "\n")
+
+ # confusion matrix
+preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
+confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
+
+ # 2 features
+model_lr <- glm(result ~ distance_ft + margin + three_pt,
+                data = train_df,
+                family = binomial)
+
+probs_lr <- predict(model_lr, newdata = test_df, type = "response")
+roc_lr <- roc(test_df$result, probs_lr)
+cat("Logistic Regression AUC:", auc(roc_lr), "\n")
+
+ # confusion matrix
+preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
+confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
+
+ # tested: 
+ # distance_ft + qtr + sec_remaining + margin + three_pt
+ # distance_ft + qtr + sec_remaining + margin
+ # distance_ft + margin + three_pt
+ # distance_ft + margin
+
+ # ** 3 features outperforms 2, 4, or 5 features **
+
+```
+
+
+
+```{r Naive Bayes}
+# 
+# model_nb <- naive_bayes(as.factor(result) ~ distance_ft + qtr + sec_remaining + margin,
+#                        data = train_df)
 
 
 ```
 
+
+
+
+
+```{r Define Clutch}
+
+# iterate later : 
+#   
+#   clutch_df <- curry
+#          is_clutch = ifelse(
+#            qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
+#              sec_remaining <= 120 &
+#              margin <= 5,
+#            1, 0)
+#          ) |>
+
+```
 
