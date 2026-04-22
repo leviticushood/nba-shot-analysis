@@ -9,11 +9,11 @@ library(lubridate)
 ```
 
 ```{r}
-model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') %>% 
+model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') |> 
   select('player', 'qtr', 'time_remaining',
          'result', 'distance_ft', 'lead',
-         'player_team_score', 'opponent_team_score') %>% 
-  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) %>%
+         'player_team_score', 'opponent_team_score') |> 
+  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) |>
   mutate(margin = abs(player_team_score - opponent_team_score),
          result_binary = ifelse(model_data$result == 'TRUE', 1, 0),
          lead_binary = ifelse(model_data$lead == 'TRUE', 1, 0),
@@ -24,6 +24,6 @@ model_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_
            1, 0)
          )
 
-model_data %>% group_by(player, is_clutch) %>% count()
+model_data |> group_by(player, is_clutch) |> count()
 ```
 

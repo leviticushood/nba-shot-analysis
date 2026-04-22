@@ -17,7 +17,7 @@ shot_data <- read.csv('/cloud/project/data/processed-data/combined_player_shot_c
 ```
 
 ```{r, fig.height = 6, fig.width = 9}
-ggplot(shot_data %>% 
+ggplot(shot_data |> 
          filter(result == 'TRUE'),
        aes(x = distance_ft, y = player,
            fill = player)) +
@@ -62,10 +62,10 @@ ggplot(shot_data %>%
 
 ```{r fig.height = 7, fig.width = 10}
 
-ridgeline_data <- shot_data %>% 
-  select('player', 'qtr', 'time_remaining', 'result') %>% 
-  filter(qtr %in% c('1st Qtr', '2nd Qtr', '3rd Qtr', '4th Qtr')) %>% 
-  filter(result == 'TRUE') %>% 
+ridgeline_data <- shot_data |> 
+  select('player', 'qtr', 'time_remaining', 'result') |> 
+  filter(qtr %in% c('1st Qtr', '2nd Qtr', '3rd Qtr', '4th Qtr')) |> 
+  filter(result == 'TRUE') |> 
   mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds'))
 
 ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
@@ -91,8 +91,8 @@ ggplot(ridgeline_data, aes(x = sec_remaining, y = player,
 
 
 ```{r fig.width = 10, fig.height = 5}
-hotzone_data <- shot_data %>% 
-  select('player','top','left', 'result') %>% 
+hotzone_data <- shot_data |> 
+  select('player','top','left', 'result') |> 
   filter(result == 'TRUE')
 
 court <- geom_basketball(league = 'NBA',
