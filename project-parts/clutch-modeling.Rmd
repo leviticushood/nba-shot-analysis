@@ -45,3 +45,10 @@ num_curry_df$qtr <- as.numeric(factor(num_curry_df$qtr,
 ggpairs(num_curry_df, progress = FALSE)
 ```
 
+```{r Train/Test Split}
+
+
+
+```
+
+
