@@ -384,8 +384,7 @@ confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 | Decision Tree | 0.650 | 0.244 | 0.624 | 0.911 | 0.318 |
 | Voting Ensemble | 0.650 | 0.267 | 0.659 | 0.804 | 0.455 |
 
-**Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)**  
-**Note:** more balanced class distribution (56/44) vs prior definition (93/58); improved specificity across all models.
+**Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)**
 
 ### Clutch Analysis Observations
 
@@ -396,3 +395,33 @@ confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 - n=100 clutch observations is insufficient for statistically significant claims about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
 - Cannot claim Curry performs better or worse in clutch -- training distribution and sample size limitations confound any such interpretation
 - Future work: clutch-specific model would require multi-season data to achieve sufficient n for reliable inference
+
+```{r}
+results_df <- tibble(
+  model = rep(c('LR', 'NB', 'DT', 'Vote'), 2),
+  context = factor(rep(c('General', 'Clutch'), each = 4),
+                   levels = c('General', 'Clutch')),
+  AUC = c(0.640, 0.637, 0.617, 0.648,
+          0.656, 0.651, 0.624, 0.659)
+) |>
+  mutate(highlight = ifelse(model == 'Vote', 'Winner', 'Other'))
+
+ggplot(results_df,
+       aes(x = model, y = AUC, fill = highlight)) +
+  geom_bar(stat = 'identity') +
+  geom_text(aes(label = round(AUC, 3)), 
+            vjust = -0.5, 
+            size = 3.5,
+            fontface = 'bold') +
+  geom_hline(yintercept = 0.5, linetype = 'dashed', color = 'red') +
+  facet_wrap(~ context) +
+  scale_fill_manual(values = c('Winner' = 'darkgreen', 'Other' = 'grey70')) +
+  labs(title = 'AUC by Model: General vs Clutch',
+       caption = 'Clutch situations are defined as shots taken in the final 5 minutes
+       of the 4th quarter or overtime with a score margin of 5 points or fewer.',
+       x = 'Model', y = 'AUC') +
+  theme_minimal() +
+  theme(legend.position = 'none') +
+  coord_cartesian(ylim = c(0.5, 0.7))
+```
+

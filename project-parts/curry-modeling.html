@@ -11,7 +11,7 @@
 
 
 
-<title>clutch-modeling</title>
+<title>Cuury Clutch Modeling</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -348,51 +348,11 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">clutch-modeling</h1>
+<h1 class="title toc-ignore">Cuury Clutch Modeling</h1>
 
 </div>
 
 
-<pre class="r"><code>knitr::opts_chunk$set(
-  warning = FALSE,
-  message = FALSE
-)
-
-library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
-## ✔ dplyr     1.2.1     ✔ readr     2.2.0
-## ✔ forcats   1.0.1     ✔ stringr   1.6.0
-## ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
-## ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
-## ✔ purrr     1.2.2     
-## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
-## ✖ dplyr::filter() masks stats::filter()
-## ✖ dplyr::lag()    masks stats::lag()
-## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
-<pre class="r"><code>library(lubridate)
-library(GGally)
-library(rpart)
-library(rpart.plot)
-library(caret)</code></pre>
-<pre><code>## Loading required package: lattice
-## 
-## Attaching package: &#39;caret&#39;
-## 
-## The following object is masked from &#39;package:purrr&#39;:
-## 
-##     lift</code></pre>
-<pre class="r"><code>library(naivebayes)</code></pre>
-<pre><code>## naivebayes 1.0.0 loaded
-## For more information please visit: 
-## https://majkamichal.github.io/naivebayes/</code></pre>
-<pre class="r"><code>library(pROC)</code></pre>
-<pre><code>## Type &#39;citation(&quot;pROC&quot;)&#39; for a citation.
-## 
-## Attaching package: &#39;pROC&#39;
-## 
-## The following objects are masked from &#39;package:stats&#39;:
-## 
-##     cov, smooth, var</code></pre>
 <pre class="r"><code> # data cleaning and binary conversion
 model_df &lt;- read.csv(&#39;/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv&#39;) |&gt; 
   select(&#39;player&#39;, &#39;qtr&#39;, &#39;time_remaining&#39;,
@@ -935,65 +895,119 @@ cat(&quot;3 Variable Vote Ensemble (3 Models) AUC:&quot;, auc(roc_vote_3), &quot
  
  # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.584, Kappa: 0.176, AUC: 0.638, Sensitivity: 0.725, Specificity: 0.453
  # 3 variable highlights per model                Accuracy: 0.608, Kappa: 0.225, AUC: 0.648, Sensitivity: 0.768, Specificity: 0.460</code></pre>
-<div id="section" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="model-performance-summary-steph-curry-2023-shot-prediction" class="section level1">
-<h1>Model Performance Summary (Steph Curry 2023 Shot Prediction)</h1>
-</div>
-<div id="section-1" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="model-features-accuracy-kappa-auc-sens-spec" class="section level1">
-<h1>Model Features Accuracy Kappa AUC Sens Spec</h1>
-</div>
-<div id="section-2" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="logistic-regression-5-0.594-0.196-0.632-0.732-0.466" class="section level1">
-<h1>Logistic Regression 5 0.594 0.196 0.632 0.732 0.466</h1>
-</div>
-<div id="logistic-regression-3-0.601-0.211-0.640-0.761-0.453" class="section level1">
-<h1>Logistic Regression 3 0.601 0.211 0.640 0.761 0.453</h1>
-</div>
-<div id="naive-bayes-5-0.587-0.181-0.628-0.710-0.473" class="section level1">
-<h1>Naive Bayes 5 0.587 0.181 0.628 0.710 0.473</h1>
-</div>
-<div id="naive-bayes-3-0.594-0.195-0.637-0.710-0.486" class="section level1">
-<h1>Naive Bayes 3 0.594 0.195 0.637 0.710 0.486</h1>
-</div>
-<div id="decision-tree-5-0.591-0.192-0.617-0.775-0.419" class="section level1">
-<h1>Decision Tree 5 0.591 0.192 0.617 0.775 0.419</h1>
-</div>
-<div id="decision-tree-3-0.594-0.202-0.617-0.833-0.372" class="section level1">
-<h1>Decision Tree 3 0.594 0.202 0.617 0.833 0.372</h1>
-</div>
-<div id="voting-ensemble-nbdtlr-5-0.584-0.176-0.638-0.725-0.453" class="section level1">
-<h1>Voting Ensemble (NB+DT+LR) 5 0.584 0.176 0.638 0.725 0.453</h1>
-</div>
-<div id="voting-ensemble-nbdtlr-3best-per0.594-0.198-0.648-0.761-0.439" class="section level1">
-<h1>Voting Ensemble (NB+DT+LR) 3(best per)0.594 0.198 0.648 0.761
-0.439</h1>
-</div>
-<div id="section-3" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="winner-3-feature-voting-ensemble-best-auc-0.648-competitive-on-all-metrics" class="section level1">
-<h1>Winner: 3-feature Voting Ensemble – best AUC (0.648), competitive on
-all metrics</h1>
+<div id="model-performance-summary-steph-curry-2023-shot-prediction" class="section level2">
+<h2>Model Performance Summary (Steph Curry 2023 Shot Prediction)</h2>
+<table style="width:100%;">
+<colgroup>
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+<col width="14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Features</th>
+<th>Accuracy</th>
+<th>Kappa</th>
+<th>AUC</th>
+<th>Sens</th>
+<th>Spec</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Logistic Regression</td>
+<td>5</td>
+<td>0.594</td>
+<td>0.196</td>
+<td>0.632</td>
+<td>0.732</td>
+<td>0.466</td>
+</tr>
+<tr class="even">
+<td>Logistic Regression</td>
+<td>3</td>
+<td>0.601</td>
+<td>0.211</td>
+<td>0.640</td>
+<td>0.761</td>
+<td>0.453</td>
+</tr>
+<tr class="odd">
+<td>Naive Bayes</td>
+<td>5</td>
+<td>0.587</td>
+<td>0.181</td>
+<td>0.628</td>
+<td>0.710</td>
+<td>0.473</td>
+</tr>
+<tr class="even">
+<td>Naive Bayes</td>
+<td>3</td>
+<td>0.594</td>
+<td>0.195</td>
+<td>0.637</td>
+<td>0.710</td>
+<td>0.486</td>
+</tr>
+<tr class="odd">
+<td>Decision Tree</td>
+<td>5</td>
+<td>0.591</td>
+<td>0.192</td>
+<td>0.617</td>
+<td>0.775</td>
+<td>0.419</td>
+</tr>
+<tr class="even">
+<td>Decision Tree</td>
+<td>3</td>
+<td>0.594</td>
+<td>0.202</td>
+<td>0.617</td>
+<td>0.833</td>
+<td>0.372</td>
+</tr>
+<tr class="odd">
+<td>Voting Ensemble (NB+DT+LR)</td>
+<td>5</td>
+<td>0.584</td>
+<td>0.176</td>
+<td>0.638</td>
+<td>0.725</td>
+<td>0.453</td>
+</tr>
+<tr class="even">
+<td>Voting Ensemble (NB+DT+LR)</td>
+<td>3 (best per model)</td>
+<td>0.594</td>
+<td>0.198</td>
+<td>0.648</td>
+<td>0.761</td>
+<td>0.439</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Winner: 3-feature Voting Ensemble – best AUC (0.648),
+competitive on all metrics</strong></p>
 <pre class="r"><code> # clutch = 4th or OT &amp; last 5 minutes &amp; 5 point margin
 clutch_df &lt;- num_curry_df |&gt;
   mutate(is_clutch = ifelse(
     qtr %in% c(4, 5, 6) &amp;
       sec_remaining &lt;= 300 &amp;
-      margin &lt;= 5, 1, 0)
+      abs(margin) &lt;= 5, 1, 0)
          ) |&gt;
   filter(is_clutch == 1)
 
 table(clutch_df$result)</code></pre>
 <pre><code>## 
 ##  0  1 
-## 93 58</code></pre>
+## 56 44</code></pre>
 <pre class="r"><code> # LR clutch
 probs_lr_clutch &lt;- predict(model_lr_3,
                            newdata = clutch_df,
@@ -1018,37 +1032,37 @@ preds_dt_clutch &lt;- predict(model_dt_pruned_3,
 
  # AUC
 cat(&quot;LR Clutch AUC:&quot;, auc(roc(clutch_df$result, probs_lr_clutch)), &quot;\n&quot;)</code></pre>
-<pre><code>## LR Clutch AUC: 0.6414535</code></pre>
+<pre><code>## LR Clutch AUC: 0.6558442</code></pre>
 <pre class="r"><code>cat(&quot;NB Clutch AUC:&quot;, auc(roc(clutch_df$result, probs_nb_clutch)), &quot;\n&quot;)</code></pre>
-<pre><code>## NB Clutch AUC: 0.6403411</code></pre>
+<pre><code>## NB Clutch AUC: 0.6513799</code></pre>
 <pre class="r"><code>cat(&quot;DT Clutch AUC:&quot;, auc(roc(clutch_df$result, probs_dt_clutch)), &quot;\n&quot;)</code></pre>
-<pre><code>## DT Clutch AUC: 0.592881</code></pre>
+<pre><code>## DT Clutch AUC: 0.6243912</code></pre>
 <pre class="r"><code> # confusion matrices
 confusionMatrix(as.factor(preds_lr_clutch), as.factor(clutch_df$result))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction  0  1
-##          0 77 38
-##          1 16 20
+##          0 46 26
+##          1 10 18
 ##                                           
-##                Accuracy : 0.6424          
-##                  95% CI : (0.5604, 0.7186)
-##     No Information Rate : 0.6159          
-##     P-Value [Acc &gt; NIR] : 0.280583        
+##                Accuracy : 0.64            
+##                  95% CI : (0.5379, 0.7336)
+##     No Information Rate : 0.56            
+##     P-Value [Acc &gt; NIR] : 0.06452         
 ##                                           
-##                   Kappa : 0.1861          
+##                   Kappa : 0.2399          
 ##                                           
-##  Mcnemar&#39;s Test P-Value : 0.004267        
+##  Mcnemar&#39;s Test P-Value : 0.01242         
 ##                                           
-##             Sensitivity : 0.8280          
-##             Specificity : 0.3448          
-##          Pos Pred Value : 0.6696          
-##          Neg Pred Value : 0.5556          
-##              Prevalence : 0.6159          
-##          Detection Rate : 0.5099          
-##    Detection Prevalence : 0.7616          
-##       Balanced Accuracy : 0.5864          
+##             Sensitivity : 0.8214          
+##             Specificity : 0.4091          
+##          Pos Pred Value : 0.6389          
+##          Neg Pred Value : 0.6429          
+##              Prevalence : 0.5600          
+##          Detection Rate : 0.4600          
+##    Detection Prevalence : 0.7200          
+##       Balanced Accuracy : 0.6153          
 ##                                           
 ##        &#39;Positive&#39; Class : 0               
 ## </code></pre>
@@ -1057,56 +1071,56 @@ confusionMatrix(as.factor(preds_lr_clutch), as.factor(clutch_df$result))</code><
 ## 
 ##           Reference
 ## Prediction  0  1
-##          0 68 31
-##          1 25 27
-##                                           
-##                Accuracy : 0.6291          
-##                  95% CI : (0.5469, 0.7063)
-##     No Information Rate : 0.6159          
-##     P-Value [Acc &gt; NIR] : 0.4033          
-##                                           
-##                   Kappa : 0.2006          
-##                                           
-##  Mcnemar&#39;s Test P-Value : 0.5040          
-##                                           
-##             Sensitivity : 0.7312          
-##             Specificity : 0.4655          
-##          Pos Pred Value : 0.6869          
-##          Neg Pred Value : 0.5192          
-##              Prevalence : 0.6159          
-##          Detection Rate : 0.4503          
-##    Detection Prevalence : 0.6556          
-##       Balanced Accuracy : 0.5984          
-##                                           
-##        &#39;Positive&#39; Class : 0               
+##          0 37 20
+##          1 19 24
+##                                          
+##                Accuracy : 0.61           
+##                  95% CI : (0.5073, 0.706)
+##     No Information Rate : 0.56           
+##     P-Value [Acc &gt; NIR] : 0.1826         
+##                                          
+##                   Kappa : 0.2067         
+##                                          
+##  Mcnemar&#39;s Test P-Value : 1.0000         
+##                                          
+##             Sensitivity : 0.6607         
+##             Specificity : 0.5455         
+##          Pos Pred Value : 0.6491         
+##          Neg Pred Value : 0.5581         
+##              Prevalence : 0.5600         
+##          Detection Rate : 0.3700         
+##    Detection Prevalence : 0.5700         
+##       Balanced Accuracy : 0.6031         
+##                                          
+##        &#39;Positive&#39; Class : 0              
 ## </code></pre>
 <pre class="r"><code>confusionMatrix(as.factor(preds_dt_clutch), as.factor(clutch_df$result))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction  0  1
-##          0 85 44
-##          1  8 14
-##                                         
-##                Accuracy : 0.6556        
-##                  95% CI : (0.574, 0.731)
-##     No Information Rate : 0.6159        
-##     P-Value [Acc &gt; NIR] : 0.179         
-##                                         
-##                   Kappa : 0.1759        
-##                                         
-##  Mcnemar&#39;s Test P-Value : 1.212e-06     
-##                                         
-##             Sensitivity : 0.9140        
-##             Specificity : 0.2414        
-##          Pos Pred Value : 0.6589        
-##          Neg Pred Value : 0.6364        
-##              Prevalence : 0.6159        
-##          Detection Rate : 0.5629        
-##    Detection Prevalence : 0.8543        
-##       Balanced Accuracy : 0.5777        
-##                                         
-##        &#39;Positive&#39; Class : 0             
+##          0 51 30
+##          1  5 14
+##                                           
+##                Accuracy : 0.65            
+##                  95% CI : (0.5482, 0.7427)
+##     No Information Rate : 0.56            
+##     P-Value [Acc &gt; NIR] : 0.04242         
+##                                           
+##                   Kappa : 0.2437          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 4.976e-05       
+##                                           
+##             Sensitivity : 0.9107          
+##             Specificity : 0.3182          
+##          Pos Pred Value : 0.6296          
+##          Neg Pred Value : 0.7368          
+##              Prevalence : 0.5600          
+##          Detection Rate : 0.5100          
+##    Detection Prevalence : 0.8100          
+##       Balanced Accuracy : 0.6144          
+##                                           
+##        &#39;Positive&#39; Class : 0               
 ## </code></pre>
 <pre class="r"><code> # vote
 vote_clutch &lt;- tibble(
@@ -1121,136 +1135,116 @@ vote_clutch$final &lt;- as.factor(
 avg_prob_clutch &lt;- (probs_nb_clutch + probs_dt_clutch + probs_lr_clutch) / 3
 
 cat(&quot;Vote Clutch AUC:&quot;, auc(roc(clutch_df$result, avg_prob_clutch)), &quot;\n&quot;)</code></pre>
-<pre><code>## Vote Clutch AUC: 0.6446051</code></pre>
+<pre><code>## Vote Clutch AUC: 0.6594968</code></pre>
 <pre class="r"><code>confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction  0  1
-##          0 76 36
-##          1 17 22
+##          0 45 24
+##          1 11 20
 ##                                           
-##                Accuracy : 0.649           
-##                  95% CI : (0.5672, 0.7248)
-##     No Information Rate : 0.6159          
-##     P-Value [Acc &gt; NIR] : 0.22665         
+##                Accuracy : 0.65            
+##                  95% CI : (0.5482, 0.7427)
+##     No Information Rate : 0.56            
+##     P-Value [Acc &gt; NIR] : 0.04242         
 ##                                           
-##                   Kappa : 0.2094          
+##                   Kappa : 0.2666          
 ##                                           
-##  Mcnemar&#39;s Test P-Value : 0.01342         
+##  Mcnemar&#39;s Test P-Value : 0.04252         
 ##                                           
-##             Sensitivity : 0.8172          
-##             Specificity : 0.3793          
-##          Pos Pred Value : 0.6786          
-##          Neg Pred Value : 0.5641          
-##              Prevalence : 0.6159          
-##          Detection Rate : 0.5033          
-##    Detection Prevalence : 0.7417          
-##       Balanced Accuracy : 0.5983          
+##             Sensitivity : 0.8036          
+##             Specificity : 0.4545          
+##          Pos Pred Value : 0.6522          
+##          Neg Pred Value : 0.6452          
+##              Prevalence : 0.5600          
+##          Detection Rate : 0.4500          
+##    Detection Prevalence : 0.6900          
+##       Balanced Accuracy : 0.6291          
 ##                                           
 ##        &#39;Positive&#39; Class : 0               
 ## </code></pre>
 </div>
-<div id="section-4" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
+<div id="clutch-model-performance-summary" class="section level2">
+<h2>Clutch Model Performance Summary</h2>
+<p><strong>n=100 | 3-feature models, no retraining</strong><br />
+<strong>Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) &lt;=
+5</strong></p>
+<table>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Accuracy</th>
+<th>Kappa</th>
+<th>AUC</th>
+<th>Sens</th>
+<th>Spec</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Logistic Regression</td>
+<td>0.640</td>
+<td>0.240</td>
+<td>0.656</td>
+<td>0.821</td>
+<td>0.409</td>
+</tr>
+<tr class="even">
+<td>Naive Bayes</td>
+<td>0.610</td>
+<td>0.207</td>
+<td>0.651</td>
+<td>0.661</td>
+<td>0.545</td>
+</tr>
+<tr class="odd">
+<td>Decision Tree</td>
+<td>0.650</td>
+<td>0.244</td>
+<td>0.624</td>
+<td>0.911</td>
+<td>0.318</td>
+</tr>
+<tr class="even">
+<td>Voting Ensemble</td>
+<td>0.650</td>
+<td>0.267</td>
+<td>0.659</td>
+<td>0.804</td>
+<td>0.455</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Winner: Voting Ensemble – best AUC (0.659) and Kappa
+(0.267)</strong><br />
+<strong>Note:</strong> more balanced class distribution (56/44) vs prior
+definition (93/58); improved specificity across all models.</p>
+<div id="clutch-analysis-observations" class="section level3">
+<h3>Clutch Analysis Observations</h3>
+<ul>
+<li>General models trained on ~48% make rate; clutch subset has ~44%
+make rate – class distributions are closer but mismatch still limits
+clutch prediction reliability</li>
+<li><code>qtr</code> and <code>sec_remaining</code> lose predictive
+value in clutch context due to near-zero variance (all clutch shots
+occur in 4th/OT with low seconds remaining)</li>
+<li>3-feature models (<code>distance_ft</code>, <code>margin</code>,
+<code>three_pt</code>) are better suited for clutch evaluation as these
+features retain meaningful variance within clutch situations</li>
+<li>High sensitivity and low specificity across clutch models suggests
+over-prediction of misses – model cannot explain clutch makes from
+general shot profile alone</li>
+<li>n=100 clutch observations is insufficient for statistically
+significant claims about clutch vs general performance differences (wide
+CIs, p &gt; 0.05 vs NIR)</li>
+<li>Cannot claim Curry performs better or worse in clutch – training
+distribution and sample size limitations confound any such
+interpretation</li>
+<li>Future work: clutch-specific model would require multi-season data
+to achieve sufficient n for reliable inference</li>
+</ul>
 </div>
-<div id="clutch-model-performance-summary-n151-3-feature-models-no-retraining" class="section level1">
-<h1>Clutch Model Performance Summary (n=151, 3-feature models, no
-retraining)</h1>
-</div>
-<div id="clutch-definition-4th-qtrot-last-5-min-margin-5" class="section level1">
-<h1>Clutch Definition: 4th Qtr/OT, last 5 min, margin &lt;= 5</h1>
-</div>
-<div id="section-5" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="model-accuracy-kappa-auc-sens-spec" class="section level1">
-<h1>Model Accuracy Kappa AUC Sens Spec</h1>
-</div>
-<div id="section-6" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="logistic-regression-0.642-0.186-0.641-0.828-0.345" class="section level1">
-<h1>Logistic Regression 0.642 0.186 0.641 0.828 0.345</h1>
-</div>
-<div id="naive-bayes-0.629-0.201-0.640-0.731-0.466" class="section level1">
-<h1>Naive Bayes 0.629 0.201 0.640 0.731 0.466</h1>
-</div>
-<div id="decision-tree-0.656-0.176-0.593-0.914-0.241" class="section level1">
-<h1>Decision Tree 0.656 0.176 0.593 0.914 0.241</h1>
-</div>
-<div id="voting-ensemble-0.649-0.209-0.645-0.817-0.379" class="section level1">
-<h1>Voting Ensemble 0.649 0.209 0.645 0.817 0.379</h1>
-</div>
-<div id="section-7" class="section level1">
-<h1>─────────────────────────────────────────────────────────────────────────────</h1>
-</div>
-<div id="winner-voting-ensemble-best-auc-0.645-and-kappa-0.209" class="section level1">
-<h1>Winner: Voting Ensemble – best AUC (0.645) and Kappa (0.209)</h1>
-</div>
-<div id="note-all-models-show-high-sensitivity-low-specificity-in-clutch-context" class="section level1">
-<h1>Note: all models show high sensitivity, low specificity in clutch
-context</h1>
-</div>
-<div id="suggesting-difficulty-identifying-made-shots-under-pressure" class="section level1">
-<h1>suggesting difficulty identifying made shots under pressure</h1>
-</div>
-<div id="clutch-analysis-observations" class="section level1">
-<h1>Clutch Analysis Observations:</h1>
-</div>
-<div id="general-models-trained-on-48-make-rate-clutch-subset-has-38-make-rate" class="section level1">
-<h1>- General models trained on ~48% make rate, clutch subset has ~38%
-make rate</h1>
-</div>
-<div id="creating-a-class-distribution-mismatch-that-limits-clutch-prediction-reliability" class="section level1">
-<h1>creating a class distribution mismatch that limits clutch prediction
-reliability</h1>
-</div>
-<div id="qtr-and-sec_remaining-lose-predictive-value-in-clutch-context-due-to-near-zero" class="section level1">
-<h1>- qtr and sec_remaining lose predictive value in clutch context due
-to near-zero</h1>
-</div>
-<div id="variance-all-clutch-shots-occur-in-4thot-with-low-seconds-remaining" class="section level1">
-<h1>variance (all clutch shots occur in 4th/OT with low seconds
-remaining)</h1>
-</div>
-<div id="feature-models-dist-margin-three_pt-are-better-suited-for-clutch-evaluation" class="section level1">
-<h1>- 3-feature models (dist, margin, three_pt) are better suited for
-clutch evaluation</h1>
-</div>
-<div id="as-these-features-retain-meaningful-variance-within-clutch-situations" class="section level1">
-<h1>as these features retain meaningful variance within clutch
-situations</h1>
-</div>
-<div id="high-sensitivity-and-low-specificity-across-clutch-models-suggests-over-prediction" class="section level1">
-<h1>- High sensitivity and low specificity across clutch models suggests
-over-prediction</h1>
-</div>
-<div id="of-misses-model-cannot-explain-clutch-makes-from-general-shot-profile-alone" class="section level1">
-<h1>of misses – model cannot explain clutch makes from general shot
-profile alone</h1>
-</div>
-<div id="n151-clutch-observations-is-insufficient-for-statistically-significant-claims" class="section level1">
-<h1>- n=151 clutch observations is insufficient for statistically
-significant claims</h1>
-</div>
-<div id="about-clutch-vs-general-performance-differences-wide-cis-p-0.05-vs-nir" class="section level1">
-<h1>about clutch vs general performance differences (wide CIs, p &gt;
-0.05 vs NIR)</h1>
-</div>
-<div id="cannot-claim-curry-performs-better-or-worse-in-clutch-training-distribution" class="section level1">
-<h1>- Cannot claim Curry performs better or worse in clutch – training
-distribution</h1>
-</div>
-<div id="and-sample-size-limitations-combat-any-such-interpretation" class="section level1">
-<h1>and sample size limitations combat any such interpretation</h1>
-</div>
-<div id="future-work-clutch-specific-model-would-require-multi-season-data-to-achieve" class="section level1">
-<h1>- Future work: clutch-specific model would require multi-season data
-to achieve</h1>
-</div>
-<div id="sufficient-n-for-reliable-inference" class="section level1">
-<h1>sufficient n for reliable inference</h1>
 </div>
 
 
