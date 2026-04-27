@@ -1,8 +1,8 @@
 ---
-title: "clutch-modeling"
+title: "Cuury Clutch Modeling"
 output: html_document
 ---
-```{r Setup}
+```{r Setup, include = FALSE}
 
 knitr::opts_chunk$set(
   warning = FALSE,
@@ -318,7 +318,7 @@ clutch_df <- num_curry_df |>
   mutate(is_clutch = ifelse(
     qtr %in% c(4, 5, 6) &
       sec_remaining <= 300 &
-      margin <= 5, 1, 0)
+      abs(margin) <= 5, 1, 0)
          ) |>
   filter(is_clutch == 1)
 
@@ -374,30 +374,30 @@ confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 ```
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Clutch Model Performance Summary (n=151, 3-feature models, no retraining)
-# Clutch Definition: 4th Qtr/OT, last 5 min, margin <= 5
+# Clutch Model Performance Summary (n=100, 3-feature models, no retraining)
+# Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) <= 5
 # ─────────────────────────────────────────────────────────────────────────────
 # Model                   Accuracy  Kappa   AUC    Sens   Spec
 # ─────────────────────────────────────────────────────────────────────────────
-# Logistic Regression     0.642     0.186   0.641  0.828  0.345
-# Naive Bayes             0.629     0.201   0.640  0.731  0.466
-# Decision Tree           0.656     0.176   0.593  0.914  0.241
-# Voting Ensemble         0.649     0.209   0.645  0.817  0.379
+# Logistic Regression     0.640     0.240   0.656  0.821  0.409
+# Naive Bayes             0.610     0.207   0.651  0.661  0.545
+# Decision Tree           0.650     0.244   0.624  0.911  0.318
+# Voting Ensemble         0.650     0.267   0.659  0.804  0.455
 # ─────────────────────────────────────────────────────────────────────────────
-# Winner: Voting Ensemble -- best AUC (0.645) and Kappa (0.209)
-# Note: all models show high sensitivity, low specificity in clutch context
-#       suggesting difficulty identifying made shots under pressure
+# Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)
+# Note: more balanced class distribution (56/44) vs prior definition (93/58)
+#       improved specificity across all models compared to previous results
 
 # Clutch Analysis Observations:
-#  - General models trained on ~48% make rate, clutch subset has ~38% make rate
-#    creating a class distribution mismatch that limits clutch prediction reliability
+#  - General models trained on ~48% make rate, clutch subset has ~44% make rate
+#    class distributions are closer but mismatch still limits clutch prediction reliability
 #  - qtr and sec_remaining lose predictive value in clutch context due to near-zero
 #    variance (all clutch shots occur in 4th/OT with low seconds remaining)
 #  - 3-feature models (dist, margin, three_pt) are better suited for clutch evaluation
 #    as these features retain meaningful variance within clutch situations
 #  - High sensitivity and low specificity across clutch models suggests over-prediction
 #    of misses -- model cannot explain clutch makes from general shot profile alone
-#  - n=151 clutch observations is insufficient for statistically significant claims
+#  - n=100 clutch observations is insufficient for statistically significant claims
 #    about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
 #  - Cannot claim Curry performs better or worse in clutch -- training distribution
 #    and sample size limitations combat any such interpretation
