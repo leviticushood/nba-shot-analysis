@@ -295,21 +295,20 @@ cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
 
 ```
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Model Performance Summary (Steph Curry 2023 Shot Prediction)
-# ─────────────────────────────────────────────────────────────────────────────
-# Model                        Features   Accuracy  Kappa   AUC    Sens   Spec
-# ─────────────────────────────────────────────────────────────────────────────
-# Logistic Regression          5          0.594     0.196   0.632  0.732  0.466
-# Logistic Regression          3          0.601     0.211   0.640  0.761  0.453
-# Naive Bayes                  5          0.587     0.181   0.628  0.710  0.473
-# Naive Bayes                  3          0.594     0.195   0.637  0.710  0.486
-# Decision Tree                5          0.591     0.192   0.617  0.775  0.419
-# Decision Tree                3          0.594     0.202   0.617  0.833  0.372
-# Voting Ensemble (NB+DT+LR)   5          0.584     0.176   0.638  0.725  0.453
-# Voting Ensemble (NB+DT+LR)   3(best per)0.594     0.198   0.648  0.761  0.439
-# ─────────────────────────────────────────────────────────────────────────────
-# Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics
+## Model Performance Summary (Steph Curry 2023 Shot Prediction)
+
+| Model | Features | Accuracy | Kappa | AUC | Sens | Spec |
+|---|---|---|---|---|---|---|
+| Logistic Regression | 5 | 0.594 | 0.196 | 0.632 | 0.732 | 0.466 |
+| Logistic Regression | 3 | 0.601 | 0.211 | 0.640 | 0.761 | 0.453 |
+| Naive Bayes | 5 | 0.587 | 0.181 | 0.628 | 0.710 | 0.473 |
+| Naive Bayes | 3 | 0.594 | 0.195 | 0.637 | 0.710 | 0.486 |
+| Decision Tree | 5 | 0.591 | 0.192 | 0.617 | 0.775 | 0.419 |
+| Decision Tree | 3 | 0.594 | 0.202 | 0.617 | 0.833 | 0.372 |
+| Voting Ensemble (NB+DT+LR) | 5 | 0.584 | 0.176 | 0.638 | 0.725 | 0.453 |
+| Voting Ensemble (NB+DT+LR) | 3 (best per model) | 0.594 | 0.198 | 0.648 | 0.761 | 0.439 |
+
+**Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics**
 
 ```{r Define Clutch}
 
@@ -373,33 +372,27 @@ cat("Vote Clutch AUC:", auc(roc(clutch_df$result, avg_prob_clutch)), "\n")
 confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 ```
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Clutch Model Performance Summary (n=100, 3-feature models, no retraining)
-# Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) <= 5
-# ─────────────────────────────────────────────────────────────────────────────
-# Model                   Accuracy  Kappa   AUC    Sens   Spec
-# ─────────────────────────────────────────────────────────────────────────────
-# Logistic Regression     0.640     0.240   0.656  0.821  0.409
-# Naive Bayes             0.610     0.207   0.651  0.661  0.545
-# Decision Tree           0.650     0.244   0.624  0.911  0.318
-# Voting Ensemble         0.650     0.267   0.659  0.804  0.455
-# ─────────────────────────────────────────────────────────────────────────────
-# Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)
-# Note: more balanced class distribution (56/44) vs prior definition (93/58)
-#       improved specificity across all models compared to previous results
+## Clutch Model Performance Summary
 
-# Clutch Analysis Observations:
-#  - General models trained on ~48% make rate, clutch subset has ~44% make rate
-#    class distributions are closer but mismatch still limits clutch prediction reliability
-#  - qtr and sec_remaining lose predictive value in clutch context due to near-zero
-#    variance (all clutch shots occur in 4th/OT with low seconds remaining)
-#  - 3-feature models (dist, margin, three_pt) are better suited for clutch evaluation
-#    as these features retain meaningful variance within clutch situations
-#  - High sensitivity and low specificity across clutch models suggests over-prediction
-#    of misses -- model cannot explain clutch makes from general shot profile alone
-#  - n=100 clutch observations is insufficient for statistically significant claims
-#    about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
-#  - Cannot claim Curry performs better or worse in clutch -- training distribution
-#    and sample size limitations combat any such interpretation
-#  - Future work: clutch-specific model would require multi-season data to achieve
-#    sufficient n for reliable inference
+**n=100 | 3-feature models, no retraining**  
+**Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) <= 5**
+
+| Model | Accuracy | Kappa | AUC | Sens | Spec |
+|---|---|---|---|---|---|
+| Logistic Regression | 0.640 | 0.240 | 0.656 | 0.821 | 0.409 |
+| Naive Bayes | 0.610 | 0.207 | 0.651 | 0.661 | 0.545 |
+| Decision Tree | 0.650 | 0.244 | 0.624 | 0.911 | 0.318 |
+| Voting Ensemble | 0.650 | 0.267 | 0.659 | 0.804 | 0.455 |
+
+**Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)**  
+**Note:** more balanced class distribution (56/44) vs prior definition (93/58); improved specificity across all models.
+
+### Clutch Analysis Observations
+
+- General models trained on ~48% make rate; clutch subset has ~44% make rate -- class distributions are closer but mismatch still limits clutch prediction reliability
+- `qtr` and `sec_remaining` lose predictive value in clutch context due to near-zero variance (all clutch shots occur in 4th/OT with low seconds remaining)
+- 3-feature models (`distance_ft`, `margin`, `three_pt`) are better suited for clutch evaluation as these features retain meaningful variance within clutch situations
+- High sensitivity and low specificity across clutch models suggests over-prediction of misses -- model cannot explain clutch makes from general shot profile alone
+- n=100 clutch observations is insufficient for statistically significant claims about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
+- Cannot claim Curry performs better or worse in clutch -- training distribution and sample size limitations confound any such interpretation
+- Future work: clutch-specific model would require multi-season data to achieve sufficient n for reliable inference
