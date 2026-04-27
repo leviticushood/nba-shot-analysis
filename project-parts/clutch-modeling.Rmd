@@ -6,6 +6,8 @@ output: html_document
 library(tidyverse)
 library(lubridate)
 library(GGally)
+library(rpart)
+library(rpart.plot)
 library(caret)
 library(naivebayes)
 library(pROC)
@@ -84,17 +86,17 @@ preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
 
  # 3 features
-model_lr <- glm(result ~ distance_ft + margin + three_pt,
+model_lr_3 <- glm(result ~ distance_ft + margin + three_pt,
                 data = train_df,
                 family = binomial)
 
-probs_lr <- predict(model_lr, newdata = test_df, type = "response")
-roc_lr <- roc(test_df$result, probs_lr)
-cat("3 Feature Logistic Regression AUC:", auc(roc_lr), "\n")
+probs_lr_3 <- predict(model_lr_3, newdata = test_df, type = "response")
+roc_lr_3 <- roc(test_df$result, probs_lr_3)
+cat("3 Feature Logistic Regression AUC:", auc(roc_lr_3), "\n")
 
  # confusion matrix
-preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
-confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
+preds_lr_3 <- ifelse(probs_lr_3 > 0.5, 1, 0)
+confusionMatrix(as.factor(preds_lr_3), as.factor(test_df$result))
 
  # LR feature selection comparison
 
@@ -133,21 +135,21 @@ cat("5 Feature Naive Bayes AUC:", auc(roc_nb), "\n")
 confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
 
  # 3 features
-model_nb <- naive_bayes(as.factor(result) ~ distance_ft + margin + three_pt,
+model_nb_3 <- naive_bayes(as.factor(result) ~ distance_ft + margin + three_pt,
                         data = train_df,
                         laplace = 1)
 
-preds_nb = predict(model_nb,
+preds_nb_3 = predict(model_nb_3,
                    newdata = test_df,
                    type = 'class')
-probs_nb = predict(model_nb,
+probs_nb_3 = predict(model_nb_3,
                    newdata = test_df,
                    type = 'prob')[, 2]
 
-roc_nb <- roc(test_df$result, probs_nb)
-cat("3 Feature Naive Bayes AUC:", auc(roc_nb), "\n")
+roc_nb_3 <- roc(test_df$result, probs_nb_3)
+cat("3 Feature Naive Bayes AUC:", auc(roc_nb_3), "\n")
 
-confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
+confusionMatrix(as.factor(preds_nb_3), as.factor(test_df$result))
 
  # NB feature comparison
 
@@ -158,9 +160,136 @@ confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
 
 ```
 
+```{r Decision Tree}
+ 
+ # 5 features
+model_dt <- rpart(result ~ distance_ft + qtr + 
+                           sec_remaining + margin + three_pt,
+                         data = train_df,
+                         method = 'class',
+                         parms = list(split = 'gini'),
+                         control = rpart::rpart.control(cp = 0.001)
+                         )
+printcp(model_dt)
+
+best_cp <- model_dt$cptable[
+  which.min(model_dt$cptable[, 'xerror']), 'CP']
+
+cat("5 Feature Regression Tree Optimal CP:", best_cp, "\n")
+
+model_dt_pruned <- rpart::prune(model_dt, cp = best_cp)  
+ # plot decision tree
+rpart.plot(model_dt_pruned,
+                       type = 4,
+                       extra = 104,
+                       fallen.leaves = TRUE,
+                       main = 'Pruned Decision Tree from 5 Variables',
+                       )
+
+preds_dt = predict(model_dt_pruned,
+                   newdata = test_df,
+                   type = 'class')
+
+probs_dt = predict(model_dt_pruned,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_dt <- roc(test_df$result, probs_dt)
+cat("5 Feature Decision Tree AUC:", auc(roc_dt), "\n")
+
+confusionMatrix(as.factor(preds_dt), as.factor(test_df$result))
+
+model_dt$variable.importance
+
+ # 3 features
+model_dt_3 <- rpart(result ~ distance_ft + sec_remaining + margin,
+                         data = train_df,
+                         method = 'class',
+                         parms = list(split = 'gini'),
+                         control = rpart::rpart.control(cp = 0.001)
+                         )
+printcp(model_dt_3)
+
+best_cp_3 <- model_dt_3$cptable[
+  which.min(model_dt_3$cptable[, 'xerror']), 'CP']
 
 
+cat("3 Feature Regression Tree Optimal CP:", best_cp_3, "\n")
 
+model_dt_pruned_3 <- rpart::prune(model_dt_3, cp = best_cp_3)  
+ # plot decision tree
+rpart.plot(model_dt_pruned_3,
+                       type = 4,
+                       extra = 104,
+                       fallen.leaves = TRUE,
+                       main = 'Pruned Decision Tree from 3 Variables',
+                       )
+
+preds_dt_3 = predict(model_dt_pruned_3,
+                   newdata = test_df,
+                   type = 'class')
+
+probs_dt_3 = predict(model_dt_pruned_3,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_dt_3 <- roc(test_df$result, probs_dt_3)
+cat("3 Feature Decision Tree AUC:", auc(roc_dt_3), "\n")
+
+confusionMatrix(as.factor(preds_dt_3), as.factor(test_df$result))
+
+
+ # DT feature comparison
+
+ # 5 variable (dist, qtr, sec, margin, three_pt)    Accuracy: 0.591, Kappa: 0.192, AUC: 0.617, Sensitivity: 0.775, Specificity: 0.419
+ # 3 variable (dist, sec, margin)                   Accuracy: 0.594, Kappa: 0.202, AUC: 0.617, Sensitivity: 0.833, Specificity: 0.372
+
+ # // 3 variable (dist, margin, sec) //
+
+```
+
+```{r Vote}
+
+ # 5 variables
+
+vote_df <- data_frame(
+  nb = as.integer(as.character(preds_nb)),
+  dt = as.integer(as.character(preds_dt)),
+  lr = as.integer(as.character(preds_lr))
+)
+
+vote_df$final <- as.factor(
+  ifelse(rowSums(vote_df) >= 2, 1, 0)
+)
+
+confusionMatrix(vote_df$final, as.factor((test_df$result)))
+
+avg_prob_vote <- (probs_nb + probs_dt + probs_lr) / 3
+roc_vote <- roc(test_df$result, avg_prob_vote)
+cat("5 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote), "\n")
+
+ # 3 variables
+
+vote_df_3 <- data_frame(
+  nb3 = as.integer(as.character(preds_nb_3)),
+  dt3 = as.integer(as.character(preds_dt_3)),
+  lr3 = as.integer(as.character(preds_lr_3))
+)
+
+vote_df_3$final <- as.factor(
+  ifelse(rowSums(vote_df_3) >= 2, 1, 0)
+)
+
+confusionMatrix(vote_df_3$final, as.factor((test_df$result)))
+
+avg_prob_vote_3 <- (probs_nb_3 + probs_dt_3 + probs_lr_3) / 3
+roc_vote_3 <- roc(test_df$result, avg_prob_vote_3)
+cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
+
+ # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.584, Kappa: 0.176, AUC: 0.638, Sensitivity: 0.725, Specificity: 0.453
+ # 3 variable highlights per model                Accuracy: 0.608, Kappa: 0.225, AUC: 0.648, Sensitivity: 0.768, Specificity: 0.460
+
+```
 
 ```{r Define Clutch}
 
