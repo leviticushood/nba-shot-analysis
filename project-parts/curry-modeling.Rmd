@@ -1,0 +1,319 @@
+---
+title: "clutch-modeling"
+output: html_document
+---
+```{r Setup}
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
+library(tidyverse)
+library(lubridate)
+library(GGally)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(naivebayes)
+library(pROC)
+
+```
+
+```{r Data Cleaning}
+
+ # data cleaning and binary conversion
+model_df <- read.csv('/cloud/project/data/processed-data/combined_player_shot_chart_2023.csv') |> 
+  select('player', 'qtr', 'time_remaining',
+         'result', 'distance_ft', 'lead',
+         'player_team_score', 'opponent_team_score',
+         'shot_type') |> 
+  mutate('sec_remaining' = as.numeric(ms(time_remaining), 'seconds')) |>
+  mutate(margin = player_team_score - opponent_team_score,
+         result = ifelse(result == 'TRUE', 1, 0),
+         lead = ifelse(lead == 'TRUE', 1, 0),
+         three_pt = ifelse(shot_type == 3, 1, 0)) |>
+  select(-'time_remaining', -'player_team_score',
+         -'opponent_team_score', -'lead', -'shot_type')
+
+curry_df <- model_df |> filter(player == 'Curry')
+```
+
+```{r Exploratory Data Analysis, fig.width=14, fig.height=11}
+
+ # convert qtrs to numeric features
+num_curry_df <- curry_df |>
+  select(-'player')
+num_curry_df$qtr <- as.numeric(factor(num_curry_df$qtr,
+         levels = c('1st Qtr', '2nd Qtr', '3rd Qtr',
+                    '4th Qtr', '1st OT', '2nd OT')))
+# correlation matrix
+ggpairs(num_curry_df, progress = FALSE)
+```
+
+```{r Train/Test Split}
+
+set.seed(123)
+
+ # stratified 80/20 split
+train_idx <- createDataPartition(num_curry_df$result, p = 0.80, list = FALSE)
+
+train_df <- num_curry_df[train_idx, ]
+test_df <- num_curry_df[-train_idx, ]
+
+ # verify stratification
+cat("Train set:", nrow(train_df), "rows |",
+    round(mean(train_df$result == 1) * 100, 1), "% Successful Shots\n")
+cat("Test set: ", nrow(test_df),  "rows |",
+    round(mean(test_df$result  == 1) * 100, 1), "% Successful Shots\n")
+
+```
+```{r Logistic Regression & Feature Selection(Baseline)}
+
+ # 5 features
+model_lr <- glm(result ~ distance_ft + qtr + sec_remaining + margin + three_pt,
+                data = train_df,
+                family = binomial)
+ # feature significance
+summary(model_lr)
+ #                 Estimate Std. Error z value Pr(>|z|)   
+ # distance_ft   -0.0674535  0.0135980  -4.961 7.03e-07 ***
+ # qtr           -0.0611919  0.0540645  -1.132 0.257706    
+ # sec_remaining  0.0002799  0.0003116   0.898 0.369065    
+ # margin         0.0273476  0.0065508   4.175 2.98e-05 ***
+ # three_pt       0.6167029  0.2810805   2.194 0.028232 *  
+  
+probs_lr <- predict(model_lr, newdata = test_df, type = "response")
+roc_lr <- roc(test_df$result, probs_lr)
+cat("5 Feature Logistic Regression AUC:", auc(roc_lr), "\n")
+
+ # confusion matrix
+preds_lr <- ifelse(probs_lr > 0.5, 1, 0)
+confusionMatrix(as.factor(preds_lr), as.factor(test_df$result))
+
+ # 3 features
+model_lr_3 <- glm(result ~ distance_ft + margin + three_pt,
+                data = train_df,
+                family = binomial)
+
+probs_lr_3 <- predict(model_lr_3, newdata = test_df, type = "response")
+roc_lr_3 <- roc(test_df$result, probs_lr_3)
+cat("3 Feature Logistic Regression AUC:", auc(roc_lr_3), "\n")
+
+ # confusion matrix
+preds_lr_3 <- ifelse(probs_lr_3 > 0.5, 1, 0)
+confusionMatrix(as.factor(preds_lr_3), as.factor(test_df$result))
+
+ # LR feature selection comparison
+
+ # 2 variable (dist, margin)                         Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64, Sensitivity: 0.72, Specificity: 0.47
+ # 3 variable (dist, margin, three_pt)               Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64, Sensitivity: 0.76, Specificity: 0.45
+ # 4 variable (dist, qtr, sec, margin)               Accuracy: 0.46, Kappa: -0.07, AUC: 0.53, Sensitivity: 0.55, Specificity: 0.38
+ # 5 variable (dist, qtr, sec, margin, three_pt)     Accuracy: 0.59, Kappa: 0.20,  AUC: 0.63, Sensitivity: 0.73, Specificity: 0.47
+
+ # // 3 variable (dist, margin, three_pt) as baseline going forward //
+
+```
+
+
+
+```{r Naive Bayes}
+ 
+ # 5 features
+model_nb <- naive_bayes(as.factor(result) ~ distance_ft + qtr + sec_remaining + margin + three_pt,
+                        data = train_df,
+                        laplace = 1)
+ # NB model EDA (top 3 features)
+model_nb$tables$distance_ft
+model_nb$tables$margin
+model_nb$tables$three_pt
+
+preds_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'class')
+probs_nb = predict(model_nb,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_nb <- roc(test_df$result, probs_nb)
+cat("5 Feature Naive Bayes AUC:", auc(roc_nb), "\n")
+
+confusionMatrix(as.factor(preds_nb), as.factor(test_df$result))
+
+ # 3 features
+model_nb_3 <- naive_bayes(as.factor(result) ~ distance_ft + margin + three_pt,
+                        data = train_df,
+                        laplace = 1)
+
+preds_nb_3 = predict(model_nb_3,
+                   newdata = test_df,
+                   type = 'class')
+probs_nb_3 = predict(model_nb_3,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_nb_3 <- roc(test_df$result, probs_nb_3)
+cat("3 Feature Naive Bayes AUC:", auc(roc_nb_3), "\n")
+
+confusionMatrix(as.factor(preds_nb_3), as.factor(test_df$result))
+
+ # NB feature comparison
+
+ # 5 variable (dist, qtr, sec, margin, three_pt)    Accuracy: 0.59, Kappa: 0.18, AUC: 0.63, Sensitivity: 0.71, Specificity: 0.47
+ # 3 variable (dist, margin, three_pt)              Accuracy: 0.59, Kappa: 0.19, AUC: 0.64, Sensitivity: 0.71, Specificity: 0.49
+
+ # // 3 variable (dist, margin, three_pt) //
+
+```
+
+```{r Decision Tree}
+ 
+ # 5 features
+model_dt <- rpart(result ~ distance_ft + qtr + 
+                           sec_remaining + margin + three_pt,
+                         data = train_df,
+                         method = 'class',
+                         parms = list(split = 'gini'),
+                         control = rpart::rpart.control(cp = 0.001)
+                         )
+printcp(model_dt)
+
+best_cp <- model_dt$cptable[
+  which.min(model_dt$cptable[, 'xerror']), 'CP']
+
+cat("5 Feature Regression Tree Optimal CP:", best_cp, "\n")
+
+model_dt_pruned <- rpart::prune(model_dt, cp = best_cp)  
+ # plot decision tree
+rpart.plot(model_dt_pruned,
+                       type = 4,
+                       extra = 104,
+                       fallen.leaves = TRUE,
+                       main = 'Pruned Decision Tree from 5 Variables',
+                       )
+
+preds_dt = predict(model_dt_pruned,
+                   newdata = test_df,
+                   type = 'class')
+
+probs_dt = predict(model_dt_pruned,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_dt <- roc(test_df$result, probs_dt)
+cat("5 Feature Decision Tree AUC:", auc(roc_dt), "\n")
+
+confusionMatrix(as.factor(preds_dt), as.factor(test_df$result))
+
+model_dt$variable.importance
+
+ # 3 features
+model_dt_3 <- rpart(result ~ distance_ft + sec_remaining + margin,
+                         data = train_df,
+                         method = 'class',
+                         parms = list(split = 'gini'),
+                         control = rpart::rpart.control(cp = 0.001)
+                         )
+printcp(model_dt_3)
+
+best_cp_3 <- model_dt_3$cptable[
+  which.min(model_dt_3$cptable[, 'xerror']), 'CP']
+
+
+cat("3 Feature Regression Tree Optimal CP:", best_cp_3, "\n")
+
+model_dt_pruned_3 <- rpart::prune(model_dt_3, cp = best_cp_3)  
+ # plot decision tree
+rpart.plot(model_dt_pruned_3,
+                       type = 4,
+                       extra = 104,
+                       fallen.leaves = TRUE,
+                       main = 'Pruned Decision Tree from 3 Variables',
+                       )
+
+preds_dt_3 = predict(model_dt_pruned_3,
+                   newdata = test_df,
+                   type = 'class')
+
+probs_dt_3 = predict(model_dt_pruned_3,
+                   newdata = test_df,
+                   type = 'prob')[, 2]
+
+roc_dt_3 <- roc(test_df$result, probs_dt_3)
+cat("3 Feature Decision Tree AUC:", auc(roc_dt_3), "\n")
+
+confusionMatrix(as.factor(preds_dt_3), as.factor(test_df$result))
+
+
+ # DT feature comparison
+
+ # 5 variable (dist, qtr, sec, margin, three_pt)    Accuracy: 0.591, Kappa: 0.192, AUC: 0.617, Sensitivity: 0.775, Specificity: 0.419
+ # 3 variable (dist, sec, margin)                   Accuracy: 0.594, Kappa: 0.202, AUC: 0.617, Sensitivity: 0.833, Specificity: 0.372
+
+ # // 3 variable (dist, margin, sec) //
+
+```
+
+```{r Vote}
+
+ # 5 variables
+
+vote_df <- data_frame(
+  nb = as.integer(as.character(preds_nb)),
+  dt = as.integer(as.character(preds_dt)),
+  lr = as.integer(as.character(preds_lr))
+)
+
+vote_df$final <- as.factor(
+  ifelse(rowSums(vote_df) >= 2, 1, 0)
+)
+
+confusionMatrix(vote_df$final, as.factor((test_df$result)))
+
+avg_prob_vote <- (probs_nb + probs_dt + probs_lr) / 3
+roc_vote <- roc(test_df$result, avg_prob_vote)
+cat("5 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote), "\n")
+
+ # 3 variables
+
+vote_df_3 <- data_frame(
+  nb3 = as.integer(as.character(preds_nb_3)),
+  dt3 = as.integer(as.character(preds_dt_3)),
+  lr3 = as.integer(as.character(preds_lr_3))
+)
+
+vote_df_3$final <- as.factor(
+  ifelse(rowSums(vote_df_3) >= 2, 1, 0)
+)
+
+confusionMatrix(vote_df_3$final, as.factor((test_df$result)))
+
+avg_prob_vote_3 <- (probs_nb_3 + probs_dt_3 + probs_lr_3) / 3
+roc_vote_3 <- roc(test_df$result, avg_prob_vote_3)
+cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
+
+ # Note: 3-feature models use the best performing features per model type
+ # LR + NB: distance_ft, margin, three_pt (statistically significant predictors)
+ # DT:      distance_ft, sec_remaining, margin (highest variable importance scores)
+ 
+ # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.584, Kappa: 0.176, AUC: 0.638, Sensitivity: 0.725, Specificity: 0.453
+ # 3 variable highlights per model                Accuracy: 0.608, Kappa: 0.225, AUC: 0.648, Sensitivity: 0.768, Specificity: 0.460
+
+```
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Model Performance Summary (Steph Curry 2023 Shot Prediction)
+# ─────────────────────────────────────────────────────────────────────────────
+# Model                        Features   Accuracy  Kappa   AUC    Sens   Spec
+# ─────────────────────────────────────────────────────────────────────────────
+# Logistic Regression          5          0.594     0.196   0.632  0.732  0.466
+# Logistic Regression          3          0.601     0.211   0.640  0.761  0.453
+# Naive Bayes                  5          0.587     0.181   0.628  0.710  0.473
+# Naive Bayes                  3          0.594     0.195   0.637  0.710  0.486
+# Decision Tree                5          0.591     0.192   0.617  0.775  0.419
+# Decision Tree                3          0.594     0.202   0.617  0.833  0.372
+# Voting Ensemble (NB+DT+LR)   5          0.584     0.176   0.638  0.725  0.453
+# Voting Ensemble (NB+DT+LR)   3(best per)0.594     0.198   0.648  0.761  0.439
+# ─────────────────────────────────────────────────────────────────────────────
+# Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics
+

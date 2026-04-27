@@ -3,6 +3,12 @@ title: "clutch-modeling"
 output: html_document
 ---
 ```{r Setup}
+
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE
+)
+
 library(tidyverse)
 library(lubridate)
 library(GGally)
@@ -31,6 +37,22 @@ model_df <- read.csv('/cloud/project/data/processed-data/combined_player_shot_ch
          -'opponent_team_score', -'lead', -'shot_type')
 
 curry_df <- model_df |> filter(player == 'Curry')
+```
+
+```{r Define Clutch}
+
+ # clutch = 4th or OT & last 5 minutes & 5 point margin
+curry_df <- curry_df |>
+  mutate(is_clutch = ifelse(
+    qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
+      sec_remaining <= 300 &
+      margin <= 5, 1, 0)
+         ) |>
+  filter(is_clutch == 1) |>
+  select(-is_clutch)
+
+table(curry_df$result)
+
 ```
 
 ```{r Exploratory Data Analysis, fig.width=14, fig.height=11}
@@ -286,22 +308,13 @@ avg_prob_vote_3 <- (probs_nb_3 + probs_dt_3 + probs_lr_3) / 3
 roc_vote_3 <- roc(test_df$result, avg_prob_vote_3)
 cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
 
+ # Note: 3-feature models use the best performing features per model type
+ # LR + NB: distance_ft, margin, three_pt (statistically significant predictors)
+ # DT:      distance_ft, sec_remaining, margin (highest variable importance scores)
+ 
  # 5 variable (dist, qtr, sec, margin, three_pt)  Accuracy: 0.584, Kappa: 0.176, AUC: 0.638, Sensitivity: 0.725, Specificity: 0.453
  # 3 variable highlights per model                Accuracy: 0.608, Kappa: 0.225, AUC: 0.648, Sensitivity: 0.768, Specificity: 0.460
 
 ```
-
-```{r Define Clutch}
-
-# iterate later : 
-#   
-#   clutch_df <- curry
-#          is_clutch = ifelse(
-#            qtr %in% c('4th Qtr', '1st OT', '2nd OT') &
-#              sec_remaining <= 120 &
-#              margin <= 5,
-#            1, 0)
-#          ) |>
-
-```
+###Summary Table of Results
 
