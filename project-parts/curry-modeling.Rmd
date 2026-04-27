@@ -76,12 +76,6 @@ model_lr <- glm(result ~ distance_ft + qtr + sec_remaining + margin + three_pt,
                 family = binomial)
  # feature significance
 summary(model_lr)
- #                 Estimate Std. Error z value Pr(>|z|)   
- # distance_ft   -0.0674535  0.0135980  -4.961 7.03e-07 ***
- # qtr           -0.0611919  0.0540645  -1.132 0.257706    
- # sec_remaining  0.0002799  0.0003116   0.898 0.369065    
- # margin         0.0273476  0.0065508   4.175 2.98e-05 ***
- # three_pt       0.6167029  0.2810805   2.194 0.028232 *  
   
 probs_lr <- predict(model_lr, newdata = test_df, type = "response")
 roc_lr <- roc(test_df$result, probs_lr)
@@ -317,3 +311,95 @@ cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
 # ─────────────────────────────────────────────────────────────────────────────
 # Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics
 
+```{r Define Clutch}
+
+ # clutch = 4th or OT & last 5 minutes & 5 point margin
+clutch_df <- num_curry_df |>
+  mutate(is_clutch = ifelse(
+    qtr %in% c(4, 5, 6) &
+      sec_remaining <= 300 &
+      margin <= 5, 1, 0)
+         ) |>
+  filter(is_clutch == 1)
+
+table(clutch_df$result)
+
+ # LR clutch
+probs_lr_clutch <- predict(model_lr_3,
+                           newdata = clutch_df,
+                           type = 'response')
+preds_lr_clutch <- ifelse(probs_lr_clutch > 0.5, 1, 0)
+
+ # NB clutch
+probs_nb_clutch <- predict(model_nb_3, 
+                           newdata = clutch_df, 
+                           type = 'prob')[, 2]
+preds_nb_clutch <- predict(model_nb_3, 
+                           newdata = clutch_df, 
+                           type = 'class')
+
+ # DT clutch
+probs_dt_clutch <- predict(model_dt_pruned_3, 
+                           newdata = clutch_df, 
+                           type = 'prob')[, 2]
+preds_dt_clutch <- predict(model_dt_pruned_3, 
+                           newdata = clutch_df, 
+                           type = 'class')
+
+ # AUC
+cat("LR Clutch AUC:", auc(roc(clutch_df$result, probs_lr_clutch)), "\n")
+cat("NB Clutch AUC:", auc(roc(clutch_df$result, probs_nb_clutch)), "\n")
+cat("DT Clutch AUC:", auc(roc(clutch_df$result, probs_dt_clutch)), "\n")
+
+ # confusion matrices
+confusionMatrix(as.factor(preds_lr_clutch), as.factor(clutch_df$result))
+confusionMatrix(as.factor(preds_nb_clutch), as.factor(clutch_df$result))
+confusionMatrix(as.factor(preds_dt_clutch), as.factor(clutch_df$result))
+
+ # vote
+vote_clutch <- tibble(
+  nb = as.integer(as.character(preds_nb_clutch)),
+  dt = as.integer(as.character(preds_dt_clutch)),
+  lr = as.integer(as.character(preds_lr_clutch))
+)
+
+vote_clutch$final <- as.factor(
+  ifelse(rowSums(vote_clutch) >= 2, 1, 0))
+
+avg_prob_clutch <- (probs_nb_clutch + probs_dt_clutch + probs_lr_clutch) / 3
+
+cat("Vote Clutch AUC:", auc(roc(clutch_df$result, avg_prob_clutch)), "\n")
+
+confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
+```
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Clutch Model Performance Summary (n=151, 3-feature models, no retraining)
+# Clutch Definition: 4th Qtr/OT, last 5 min, margin <= 5
+# ─────────────────────────────────────────────────────────────────────────────
+# Model                   Accuracy  Kappa   AUC    Sens   Spec
+# ─────────────────────────────────────────────────────────────────────────────
+# Logistic Regression     0.642     0.186   0.641  0.828  0.345
+# Naive Bayes             0.629     0.201   0.640  0.731  0.466
+# Decision Tree           0.656     0.176   0.593  0.914  0.241
+# Voting Ensemble         0.649     0.209   0.645  0.817  0.379
+# ─────────────────────────────────────────────────────────────────────────────
+# Winner: Voting Ensemble -- best AUC (0.645) and Kappa (0.209)
+# Note: all models show high sensitivity, low specificity in clutch context
+#       suggesting difficulty identifying made shots under pressure
+
+# Clutch Analysis Observations:
+#  - General models trained on ~48% make rate, clutch subset has ~38% make rate
+#    creating a class distribution mismatch that limits clutch prediction reliability
+#  - qtr and sec_remaining lose predictive value in clutch context due to near-zero
+#    variance (all clutch shots occur in 4th/OT with low seconds remaining)
+#  - 3-feature models (dist, margin, three_pt) are better suited for clutch evaluation
+#    as these features retain meaningful variance within clutch situations
+#  - High sensitivity and low specificity across clutch models suggests over-prediction
+#    of misses -- model cannot explain clutch makes from general shot profile alone
+#  - n=151 clutch observations is insufficient for statistically significant claims
+#    about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
+#  - Cannot claim Curry performs better or worse in clutch -- training distribution
+#    and sample size limitations combat any such interpretation
+#  - Future work: clutch-specific model would require multi-season data to achieve
+#    sufficient n for reliable inference

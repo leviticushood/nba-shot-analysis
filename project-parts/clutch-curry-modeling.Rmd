@@ -52,7 +52,6 @@ curry_df <- curry_df |>
   select(-is_clutch)
 
 table(curry_df$result)
-
 ```
 
 ```{r Exploratory Data Analysis, fig.width=14, fig.height=11}
@@ -92,12 +91,6 @@ model_lr <- glm(result ~ distance_ft + qtr + sec_remaining + margin + three_pt,
                 family = binomial)
  # feature significance
 summary(model_lr)
- #                 Estimate Std. Error z value Pr(>|z|)   
- # distance_ft   -0.0674535  0.0135980  -4.961 7.03e-07 ***
- # qtr           -0.0611919  0.0540645  -1.132 0.257706    
- # sec_remaining  0.0002799  0.0003116   0.898 0.369065    
- # margin         0.0273476  0.0065508   4.175 2.98e-05 ***
- # three_pt       0.6167029  0.2810805   2.194 0.028232 *  
   
 probs_lr <- predict(model_lr, newdata = test_df, type = "response")
 roc_lr <- roc(test_df$result, probs_lr)
@@ -120,14 +113,10 @@ cat("3 Feature Logistic Regression AUC:", auc(roc_lr_3), "\n")
 preds_lr_3 <- ifelse(probs_lr_3 > 0.5, 1, 0)
 confusionMatrix(as.factor(preds_lr_3), as.factor(test_df$result))
 
- # LR feature selection comparison
+ # LR Clutch Performance (general model applied to clutch subset, n=151)
 
- # 2 variable (dist, margin)                         Accuracy: 0.59, Kappa: 0.20,  AUC: 0.64, Sensitivity: 0.72, Specificity: 0.47
- # 3 variable (dist, margin, three_pt)               Accuracy: 0.60, Kappa: 0.21,  AUC: 0.64, Sensitivity: 0.76, Specificity: 0.45
- # 4 variable (dist, qtr, sec, margin)               Accuracy: 0.46, Kappa: -0.07, AUC: 0.53, Sensitivity: 0.55, Specificity: 0.38
- # 5 variable (dist, qtr, sec, margin, three_pt)     Accuracy: 0.59, Kappa: 0.20,  AUC: 0.63, Sensitivity: 0.73, Specificity: 0.47
-
- # // 3 variable (dist, margin, three_pt) as baseline going forward //
+ # 5 variable (dist, qtr, sec, margin, three_pt)     Accuracy: 0.600, Kappa: 0.200, AUC: 0.444, Sensitivity: 1.000, Specificity: 0.200
+ # 3 variable (dist, margin, three_pt)               Accuracy: 0.567, Kappa: 0.133, AUC: 0.462, Sensitivity: 1.000, Specificity: 0.133
 
 ```
 
