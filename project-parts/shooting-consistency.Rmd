@@ -12,8 +12,19 @@ library(patchwork)
 library(ggrepel)
 library(zoo)
 
+getwd()
+list.files()
+list.files("data")
+list.files("data/raw-data")
+list.files(recursive = TRUE, pattern = "\\.csv$")
+dir.exists("data")
+dir.exists("data/raw-data")
+list.files("../data/raw-data")
+
 # Load and Standardize Data
-file_paths <- c("2_james_harden_shot_chart_2023.csv", "1_lebron_james_shot_chart_2023.csv", "3_steph_curry_shot_chart_2023.csv")
+file_paths <- c( "../data/raw-data/2_james_harden_shot_chart_2023.csv",
+  "../data/raw-data/1_lebron_james_shot_chart_1_2023.csv",
+  "../data/raw-data/3_stephen_curry_shot_chart_2023.csv")
 
 read_shot_file <- function(path) {
   player_name <- path |>
@@ -32,14 +43,19 @@ read_shot_file <- function(path) {
 shots_raw <- map_dfr(file_paths, read_shot_file)
 
 # Normalize key columns
+normalize_names <- function(df) {
+  date_col <- intersect(c("GAME_DATE", "game_date", "date", "Date"), names(df))[1]
+  if (is.na(date_col)) stop("No game date column found. Available columns: ",
+                             paste(names(df), collapse = ", "))
+  df |>
+    rename(game_date = !!date_col) |>
+    mutate(shot_made = as.integer(result == TRUE))  # result is TRUE/FALSE
+}
+
 shots <- shots_raw |>
-  rename(
-    game_date  = any_of(c("GAME_DATE", "game_date", "date", "Date")),
-    shot_made  = any_of(c("SHOT_MADE_FLAG", "shot_made_flag", "made", "MADE"))
-  ) |>
+  normalize_names() |>
   mutate(
-    # parse "2022-10-18" or "20221018"
-    game_date = ymd(game_date),   
+    game_date = mdy(game_date),   # "Oct 18, 2022" format needs mdy() not ymd()
     shot_made = as.integer(shot_made)
   ) |>
   filter(!is.na(game_date), !is.na(shot_made))
@@ -126,11 +142,11 @@ print(plot_rolling)
 outliers <- game_fg |>
   group_by(player) |>
   mutate(
-    q1     = quantile(fg_pct, 0.25),
-    q3     = quantile(fg_pct, 0.75),
-    iqr    = q3 - q1,
-    lower  = q1 - 1.5 * iqr,
-    upper  = q3 + 1.5 * iqr,
+    q1 = quantile(fg_pct, 0.25, na.rm = TRUE)[[1]],
+    q3 = quantile(fg_pct, 0.75, na.rm = TRUE)[[1]],
+    iqr = q3 - q1,
+    lower = q1 - 1.5 * iqr,
+    upper = q3 + 1.5 * iqr,
     is_outlier = fg_pct < lower | fg_pct > upper
   ) |>
   ungroup()
