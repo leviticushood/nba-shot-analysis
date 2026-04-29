@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ##------------------------------------------------------------------------------
 ## Final Project - Code Submission
 ## INFO 523 - Data Mining and Discovery
@@ -157,13 +156,4 @@ court +
 #--------------------------------- Question 3 ----------------------------------
 # 3. Does the given player tend to perform better under pressure (or clutch up) 
 #    compared to their overall average?
-=======
-##------------------------------------------
-## NBA Player Shot Analysis & Modeling
-## INFO 523 - Data Mining and Discovery
-## Levi Hood & Andrew King
-## 30 April 2026
-##------------------------------------------
 
-# This 
->>>>>>> e9b4c0f9161c2487deeddc97aae3f7e7841a43ea
