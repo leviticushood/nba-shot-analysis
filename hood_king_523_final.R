@@ -117,7 +117,7 @@ hotzone_data <- shot_data |>
   select('player','top','left', 'result') |> 
   filter(result == 'TRUE')
 
-# create the court background using sportyr
+# create the bball court background using sportyr for geospatial shot distribtuion
 court <- geom_basketball(league = 'NBA',
                          court_units = 'feet',
                          display_range = 'offense'
