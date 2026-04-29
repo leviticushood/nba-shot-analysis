@@ -7,8 +7,9 @@
 
 ##------------------- NBA Player Shot Analysis & Modeling ----------------------
 
-# This project uses a public kaggle dataset comprised of three NBA shot performance stats
-# from the 2023 NBA season (LeBron, Curry, & Harden). The project answers these three questions:
+# This project uses a public kaggle dataset comprised of three NBA shot 
+# performance stats from the 2023 NBA season (LeBron, Curry, & Harden). 
+# The project answers these three questions:
 
 # 1. Do players have specific hot-zones where they have a significant advantage? 
 #    Where are these hot-zones?
