@@ -147,18 +147,238 @@ court +
 #--------------------------------- Question 2 ----------------------------------
 # 2. Who is the most consistent shooter?
 
+# This section normalizes and calculates shooting performance between 3 players
+# and visualizes the results.
+
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(ggtext)
+library(patchwork)
+library(ggrepel)
+library(zoo)
 
 
-################################################################################
-################################################################################
+# Load and Standardize Data
+file_paths <- c( "../data/raw-data/2_james_harden_shot_chart_2023.csv",
+                 "../data/raw-data/1_lebron_james_shot_chart_1_2023.csv",
+                 "../data/raw-data/3_stephen_curry_shot_chart_2023.csv")
+
+read_shot_file <- function(path) {
+  player_name <- path |>
+    basename() |>
+    tools::file_path_sans_ext() |>
+    str_remove("^\\d+_") |>        
+    str_replace_all("_", " ") |>
+    str_to_title()
+  
+  player_name <- str_remove(player_name, "\\s*Shot Chart.*")
+  
+  read_csv(path, show_col_types = FALSE) |>
+    mutate(player = player_name)
+}
+
+shots_raw <- map_dfr(file_paths, read_shot_file)
+
+# Normalize key columns
+normalize_names <- function(df) {
+  date_col <- intersect(c("GAME_DATE", "game_date", "date", "Date"), names(df))[1]
+  if (is.na(date_col)) stop("No game date column found. Available columns: ",
+                            paste(names(df), collapse = ", "))
+  df |>
+    rename(game_date = !!date_col) |>
+    mutate(shot_made = as.integer(result == TRUE))  # result is TRUE/FALSE
+}
+
+shots <- shots_raw |>
+  normalize_names() |>
+  mutate(
+    game_date = mdy(game_date),   # "Oct 18, 2022" format needs mdy() not ymd()
+    shot_made = as.integer(shot_made)
+  ) |>
+  filter(!is.na(game_date), !is.na(shot_made))
+
+game_fg <- shots |>
+  group_by(player, game_date) |>
+  summarise(
+    # Calculate the fg%
+    fga      = n(),                        
+    fgm      = sum(shot_made),              
+    fg_pct   = fgm / fga,                   
+    .groups  = "drop"
+  ) |>
+  arrange(player, game_date) |>
+  group_by(player) |>
+  mutate(game_num = row_number()) |>       
+  ungroup()
+
+cat(" Per-game FG% sample \n")
+print(head(game_fg, 10))
+
+# Stability metrics
+
+stability <- game_fg |>
+  group_by(player) |>
+  summarise(
+    games        = n(),
+    season_fg    = mean(fg_pct),           
+    sd_fg        = sd(fg_pct),              
+    cv_fg        = sd_fg / season_fg,       
+    median_fg    = median(fg_pct),
+    iqr_fg       = IQR(fg_pct),
+    .groups      = "drop"
+  ) |>
+  arrange(desc(cv_fg))
+cat("\n Stability Metrics \n")
+print(stability)
 
 
+# Rolling Average (5-game window) for trend
 
+game_fg <- game_fg |>
+  group_by(player) |>
+  mutate(
+    roll5_fg = zoo::rollmeanr(fg_pct, k = 5, fill = NA)
+  ) |>
+  ungroup()
 
+# Plot: Rolling FG% trend
+plot_rolling <- game_fg |>
+  ggplot(aes(x = game_num)) +
+  # Raw per-game bars (muted, background context)
+  geom_col(aes(y = fg_pct), fill = "#a8c8e8", alpha = 0.55, width = 0.7) +
+  # 5-game rolling average line
+  geom_line(aes(y = roll5_fg, colour = player), linewidth = 1.2, na.rm = TRUE) +
+  geom_point(aes(y = roll5_fg, colour = player), size = 1.8, na.rm = TRUE) +
+  # Season average reference
+  geom_hline(
+    data = stability,
+    aes(yintercept = season_fg, colour = player),
+    linetype = "dashed", linewidth = 0.7, alpha = 0.7
+  ) +
+  facet_wrap(~player, ncol = 1, scales = "free_x") +
+  scale_y_continuous(labels = percent_format(accuracy = 1), limits = c(0, 1)) +
+  scale_colour_brewer(palette = "Set1", guide = "none") +
+  labs(
+    title    = "**FG% Trend** — 5-Game Rolling Average",
+    subtitle = "Bars = per-game FG% | Line = 5-game rolling avg | Dashed = season avg",
+    x        = "Game Number (chronological)",
+    y        = "Field Goal %",
+    caption  = "Source: NBA 2023 Player Shot Chart Dataset (Kaggle)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_markdown(face = "bold"),
+    strip.text    = element_text(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+print(plot_rolling)
+
+# Outlier Detection with Box and Whisker Plot
+
+outliers <- game_fg |>
+  group_by(player) |>
+  mutate(
+    q1 = quantile(fg_pct, 0.25, na.rm = TRUE)[[1]],
+    q3 = quantile(fg_pct, 0.75, na.rm = TRUE)[[1]],
+    iqr = q3 - q1,
+    lower = q1 - 1.5 * iqr,
+    upper = q3 + 1.5 * iqr,
+    is_outlier = fg_pct < lower | fg_pct > upper
+  ) |>
+  ungroup()
+
+# ── Plot: Box-and-whisker with jittered points ───────────────
+plot_box <- outliers |>
+  ggplot(aes(x = player, y = fg_pct, fill = player)) +
+  geom_boxplot(
+    outlier.shape = NA,        # we draw outliers manually below
+    alpha = 0.6,
+    width = 0.45,
+    colour = "grey30"
+  ) +
+  # All non-outlier games (light jitter)
+  geom_jitter(
+    data  = filter(outliers, !is_outlier),
+    aes(colour = player),
+    width = 0.12, size = 1.6, alpha = 0.4, shape = 16
+  ) +
+  # Outlier games (highlighted)
+  geom_jitter(
+    data  = filter(outliers, is_outlier),
+    colour = "#e63946", size = 3, alpha = 0.9, shape = 18, width = 0.05
+  ) +
+  # Annotate outlier dates
+  ggrepel::geom_text_repel(
+    data         = filter(outliers, is_outlier),
+    aes(label    = format(game_date, "%b %d")),
+    size         = 3,
+    colour       = "#e63946",
+    box.padding  = 0.4,
+    segment.alpha = 0.5,
+    max.overlaps = 20
+  ) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  scale_fill_brewer(palette = "Set1", guide = "none") +
+  scale_colour_brewer(palette = "Set1", guide = "none") +
+  labs(
+    title    = "**FG% Distribution** — Box-and-Whisker with Outlier Detection",
+    subtitle = "Red diamonds = games outside 1.5 × IQR (Tukey fences)",
+    x        = NULL,
+    y        = "Field Goal %",
+    caption  = "Source: NBA 2023 Player Shot Chart Dataset (Kaggle)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title       = element_markdown(face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+print(plot_box)
+
+# Combined Summary Table
+
+outlier_counts <- outliers |>
+  group_by(player) |>
+  summarise(n_outlier_games = sum(is_outlier), .groups = "drop")
+
+summary_table <- stability |>
+  left_join(outlier_counts, by = "player") |>
+  mutate(
+    across(c(season_fg, sd_fg, cv_fg, median_fg, iqr_fg),
+           ~ round(.x * 100, 1))        
+  ) |>
+  rename(
+    Player            = player,
+    Games             = games,
+    `Season FG% `     = season_fg,
+    `SD (pp)`         = sd_fg,
+    `CV (%)`          = cv_fg,
+    `Median FG%`      = median_fg,
+    `IQR (pp)`        = iqr_fg,
+    `Outlier Games`   = n_outlier_games
+  )
+
+cat("\n Full Volatility Summary \n")
+print(summary_table, n = Inf)
+
+# Save final output (Not sure if we need)
+
+# ggsave("fg_rolling_trend.png",  plot_rolling, width = 11, height = 5,  dpi = 180)
+# ggsave("fg_boxplot_outliers.png", plot_box,   width = 9,  height = 6,  dpi = 180)
+
+# readr::write_csv(game_fg,       "game_level_fg.csv")
+# readr::write_csv(summary_table, "volatility_summary.csv")
+
+# cat("\n✓ Plots and CSVs saved to working directory.\n")
 
 #--------------------------------- Question 3 ----------------------------------
 # 3. Does the given player tend to perform better under pressure (or clutch up) 
 #    compared to their overall average?
+
+# The following section compares the metrics of 4 trained models for Curry's 
+# full 2023 season performance and his clutch performance (defined below):
 
 # load in necessary libraries
 library(tidyverse)
@@ -438,18 +658,17 @@ cat("3 Variable Vote Ensemble (3 Models) AUC:", auc(roc_vote_3), "\n")
 ## -----------------------------------------------------------------------------
 ## Model Performance Summary (Steph Curry 2023 Shot Prediction)
 
-| Model | Features | Accuracy | Kappa | AUC | Sens | Spec |
-  |---|---|---|---|---|---|---|
-  | Logistic Regression | 5 | 0.594 | 0.196 | 0.632 | 0.732 | 0.466 |
-  | Logistic Regression | 3 | 0.601 | 0.211 | 0.640 | 0.761 | 0.453 |
-  | Naive Bayes | 5 | 0.587 | 0.181 | 0.628 | 0.710 | 0.473 |
-  | Naive Bayes | 3 | 0.594 | 0.195 | 0.637 | 0.710 | 0.486 |
-  | Decision Tree | 5 | 0.591 | 0.192 | 0.617 | 0.775 | 0.419 |
-  | Decision Tree | 3 | 0.594 | 0.202 | 0.617 | 0.833 | 0.372 |
-  | Voting Ensemble (NB+DT+LR) | 5 | 0.584 | 0.176 | 0.638 | 0.725 | 0.453 |
-  | Voting Ensemble (NB+DT+LR) | 3 (best per model) | 0.594 | 0.198 | 0.648 | 0.761 | 0.439 |
-  
-  **Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics**
+# Model                        Features           Accuracy  Kappa  AUC    Sens   Spec
+# Logistic Regression          5                  0.594     0.196  0.632  0.732  0.466
+# Logistic Regression          3                  0.601     0.211  0.640  0.761  0.453
+# Naive Bayes                  5                  0.587     0.181  0.628  0.710  0.473
+# Naive Bayes                  3                  0.594     0.195  0.637  0.710  0.486
+# Decision Tree                5                  0.591     0.192  0.617  0.775  0.419
+# Decision Tree                3                  0.594     0.202  0.617  0.833  0.372
+# Voting Ensemble (NB+DT+LR)   5                  0.584     0.176  0.638  0.725  0.453
+# Voting Ensemble (NB+DT+LR)   3 (best per model) 0.594     0.198  0.648  0.761  0.439
+
+# Winner: 3-feature Voting Ensemble -- best AUC (0.648), competitive on all metrics
   
 # Define Clutch ----------------------------------------------------------------
 
@@ -515,27 +734,25 @@ confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 ## -----------------------------------------------------------------------------
 ## Clutch Model Performance Summary
 
-**n=100 | 3-feature models, no retraining**  
-  **Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) <= 5**
-  
-  | Model | Accuracy | Kappa | AUC | Sens | Spec |
-  |---|---|---|---|---|---|
-  | Logistic Regression | 0.640 | 0.240 | 0.656 | 0.821 | 0.409 |
-  | Naive Bayes | 0.610 | 0.207 | 0.651 | 0.661 | 0.545 |
-  | Decision Tree | 0.650 | 0.244 | 0.624 | 0.911 | 0.318 |
-  | Voting Ensemble | 0.650 | 0.267 | 0.659 | 0.804 | 0.455 |
-  
-  **Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)**
-  
-  ### Clutch Analysis Observations
-  
-  - General models trained on ~48% make rate; clutch subset has ~44% make rate -- class distributions are closer but mismatch still limits clutch prediction reliability
-- `qtr` and `sec_remaining` lose predictive value in clutch context due to near-zero variance (all clutch shots occur in 4th/OT with low seconds remaining)
-- 3-feature models (`distance_ft`, `margin`, `three_pt`) are better suited for clutch evaluation as these features retain meaningful variance within clutch situations
-- High sensitivity and low specificity across clutch models suggests over-prediction of misses -- model cannot explain clutch makes from general shot profile alone
-- n=100 clutch observations is insufficient for statistically significant claims about clutch vs general performance differences (wide CIs, p > 0.05 vs NIR)
-- Cannot claim Curry performs better or worse in clutch -- training distribution and sample size limitations confound any such interpretation
-- Future work: clutch-specific model would require multi-season data to achieve sufficient n for reliable inference
+# n=100 | 3-feature models, no retraining
+# Clutch Definition: 4th Qtr/OT, last 5 min, abs(margin) <= 5
+
+# Model               Accuracy  Kappa  AUC    Sens   Spec
+# Logistic Regression 0.640     0.240  0.656  0.821  0.409
+# Naive Bayes         0.610     0.207  0.651  0.661  0.545
+# Decision Tree       0.650     0.244  0.624  0.911  0.318
+# Voting Ensemble     0.650     0.267  0.659  0.804  0.455
+
+# Winner: Voting Ensemble -- best AUC (0.659) and Kappa (0.267)
+
+# Clutch Analysis Observations
+# - General models trained on ~48% make rate; clutch subset has ~44% make rate -- class distributions are close but mismatch (limits clutch prediction reliability)
+# - `qtr` and `sec_remaining` lose predictive value in clutch context due to near-zero variance (all clutch shots occur in 4th/OT with low seconds remaining)
+# - 3-feature models (`distance_ft`, `margin`, `three_pt`) are better suited for clutch evaluation
+# - High sensitivity and low specificity across clutch models suggests over-prediction of misses
+# - n=100 clutch observations is insufficient for statistically significant claims about clutch vs general performance differences (wide CIs)
+# - Cannot claim Curry performs better or worse in clutch due to training distro and sample size
+# - Future work: use multi-season data to achieve sufficient n for reliability
 
 # AUC Comparison Plot ----------------------------------------------------------
 
