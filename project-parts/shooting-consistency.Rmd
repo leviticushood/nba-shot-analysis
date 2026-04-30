@@ -12,14 +12,6 @@ library(patchwork)
 library(ggrepel)
 library(zoo)
 
-getwd()
-list.files()
-list.files("data")
-list.files("data/raw-data")
-list.files(recursive = TRUE, pattern = "\\.csv$")
-dir.exists("data")
-dir.exists("data/raw-data")
-list.files("../data/raw-data")
 
 # Load and Standardize Data
 file_paths <- c( "../data/raw-data/2_james_harden_shot_chart_2023.csv",
