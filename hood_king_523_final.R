@@ -749,7 +749,7 @@ confusionMatrix(vote_clutch$final, as.factor(clutch_df$result))
 # - General models trained on ~48% make rate; clutch subset has ~44% make rate -- class distributions are close but mismatch (limits clutch prediction reliability)
 # - `qtr` and `sec_remaining` lose predictive value in clutch context due to near-zero variance (all clutch shots occur in 4th/OT with low seconds remaining)
 # - 3-feature models (`distance_ft`, `margin`, `three_pt`) are better suited for clutch evaluation
-# - High sensitivity and low specificity across clutch models suggests over-prediction of misses
+# - High sensitivity and low specificity across clutch models suggests over-prediction of makes
 # - n=100 clutch observations is insufficient for statistically significant claims about clutch vs general performance differences (wide CIs)
 # - Cannot claim Curry performs better or worse in clutch due to training distro and sample size
 # - Future work: use multi-season data to achieve sufficient n for reliability
