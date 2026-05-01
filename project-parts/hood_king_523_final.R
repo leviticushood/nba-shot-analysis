@@ -160,9 +160,9 @@ library(zoo)
 
 
 # Load and Standardize Data
-file_paths <- c( "../data/raw-data/2_james_harden_shot_chart_2023.csv",
-                 "../data/raw-data/1_lebron_james_shot_chart_1_2023.csv",
-                 "../data/raw-data/3_stephen_curry_shot_chart_2023.csv")
+file_paths <- c( "/cloud/project/data/raw-data/2_james_harden_shot_chart_2023.csv",
+                 "/cloud/project/data/raw-data/1_lebron_james_shot_chart_1_2023.csv",
+                 "/cloud/project/data/raw-data/3_stephen_curry_shot_chart_2023.csv")
 
 read_shot_file <- function(path) {
   player_name <- path |>
@@ -782,3 +782,4 @@ ggplot(results_df,
   theme_minimal() +
   theme(legend.position = 'none') +
   coord_cartesian(ylim = c(0.5, 0.7))
+
